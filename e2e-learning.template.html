@@ -1,0 +1,218 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+Reader template. Edit compiler-and-flashinfer-e2e.md for lesson content.
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>TensorRT-LLM · 從 Request 到 GPU</title>
+<style>
+:root{--bg:#f7f7f1;--paper:#fffef9;--ink:#24332c;--muted:#637169;--line:#dce2d9;--green:#2d6744;--lime:#e7f0d9;--cyan:#e2f0f2;--orange:#faecdc;--accent:#a04c2d;--shadow:0 12px 45px #24332c08}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:88px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+a{color:var(--green);text-underline-offset:4px}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #b46c2f;outline-offset:4px}button{border:1px solid var(--line);border-radius:8px;padding:7px 13px;background:var(--paper);color:var(--ink)}button:hover{border-color:var(--green)}.top{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 25px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:13px;letter-spacing:.09em;font-weight:750}.brand span{font-weight:400;color:var(--muted);letter-spacing:0}.tools{display:flex;gap:8px;align-items:center}.search{width:260px;border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:var(--bg);color:var(--ink)}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1500px;margin:auto}.sidebar{position:sticky;top:73px;height:calc(100vh - 73px);overflow:auto;border-right:1px solid var(--line);padding:27px 20px}.sidebar p{font-size:12px;color:var(--muted);margin:0 0 12px}.sidebar a{display:block;font-size:13px;line-height:1.55;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--muted)}.sidebar a:hover,.sidebar a.active{background:var(--lime);color:var(--green)}.sidebar .group{font-size:11px;letter-spacing:.12em;font-weight:750;color:var(--green);margin:20px 10px 6px}.sidebar .start{background:var(--green);color:#fff;margin-bottom:16px}.main{padding:40px clamp(20px,4vw,65px) 80px;min-width:0}.hero{padding:20px 0 30px}.kicker{font-size:12px;color:var(--green);font-weight:750;letter-spacing:.15em}.hero h1{font-size:clamp(32px,4vw,53px);line-height:1.25;letter-spacing:-.035em;margin:15px 0 18px;font-weight:750}.hero h1 em{font-style:normal;color:var(--green)}.hero .lead{max-width:700px;color:var(--muted);font-size:17px}.meta{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0}.pill{font-size:12px;border:1px solid var(--line);border-radius:30px;padding:3px 11px;background:var(--paper)}.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.primary{background:var(--green);color:white;border-color:var(--green)}.notice{font-size:13px;line-height:1.8;border-left:3px solid #c58b50;padding:12px 16px;background:var(--orange);margin:20px 0;color:var(--ink)}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin:22px 0;padding:24px;box-shadow:var(--shadow)}.panel h2{margin:0;font-size:21px;line-height:1.5}.panel .sub{color:var(--muted);font-size:13px;margin:5px 0 18px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:20px 0}.tabs button[aria-selected=true]{background:var(--green);color:white;border-color:var(--green)}.diagram{overflow:auto}.flow{min-width:600px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px;position:relative}.node{position:relative;min-height:101px;text-align:left;border:1px solid var(--line);padding:16px;border-radius:10px;display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--lime);text-decoration:none}.node:hover{transform:translateY(-2px);box-shadow:0 6px 16px #24332c12}.node small{font-size:11px;letter-spacing:.06em;color:var(--muted)}.node strong{font-size:17px;line-height:1.5}.node span{font-size:12px;color:var(--muted)}.node.cyan{background:var(--cyan)}.node.orange{background:var(--orange)}.route{margin:15px 0 0;font-size:13px;color:var(--muted);padding:10px 13px;border:1px dashed var(--line);border-radius:8px}.diagram-note{font-size:12px;color:var(--muted);margin-top:13px}.visuals{display:grid;grid-template-columns:1fr 1fr;gap:20px}.visuals .panel{margin:0}.barrow{display:grid;grid-template-columns:55px 1fr 55px;align-items:center;gap:10px;margin:17px 0;font-size:12px}.bar{height:21px;border-radius:4px;background:var(--green)}.bar.eager{background:#bf8b5f}.fine{font-size:12px;color:var(--muted);line-height:1.7}.kv-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0}.kv-controls input{flex:1;min-width:120px;accent-color:var(--green)}.pages{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0}.page{width:64px;padding:7px 5px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:11px;background:var(--bg)}.page strong{display:block;font-size:14px}.fill{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.fill i{height:100%;display:block;background:var(--green)}.kv-result{font-size:12px;font-family:ui-monospace,monospace;white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:7px;line-height:1.7}
+.reading-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:42px 0 15px}.reading-head h2{font-size:24px;margin:0}.reading-head label{font-size:13px;color:var(--muted)}.status{font-size:13px;color:var(--muted);min-height:25px}.chapter{background:var(--paper);border:1px solid var(--line);border-radius:11px;margin:12px 0;scroll-margin-top:90px}.chapter[open]{box-shadow:var(--shadow)}.chapter>summary{cursor:pointer;list-style:none;display:flex;gap:13px;align-items:center;padding:20px;font-weight:650;font-size:17px;line-height:1.6}.chapter>summary::-webkit-details-marker{display:none}.chapter>summary::after{content:'＋';margin-left:auto;font-size:20px;color:var(--green)}.chapter[open]>summary::after{content:'−'}.num{font:12px ui-monospace,monospace;color:var(--green);background:var(--lime);padding:5px 7px;border-radius:5px;flex:none}.chapter-body{padding:0 25px 22px;overflow-wrap:anywhere}.chapter-body p{max-width:80ch;margin:15px 0}.chapter-body h3{font-size:19px;margin:28px 0 10px}.chapter-body h4{font-size:16px}.chapter-body ul,.chapter-body ol{padding-left:24px}.chapter-body li{margin:7px 0}.table-wrap{overflow-x:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:12px 10px;line-height:1.8}th{background:var(--lime);font-weight:650}td:first-child{font-weight:550}pre{padding:20px;border-radius:9px;background:#20332b;color:#eef5e8;overflow:auto;font-size:13px;line-height:1.8}code{font: .88em/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--lime);color:var(--green);padding:2px 5px;border-radius:4px}pre code{background:none;color:inherit;padding:0;font-size:inherit}blockquote{margin:20px 0;border-left:3px solid var(--green);padding:0 16px;color:var(--muted)}.chapter-foot{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:16px;margin-top:24px}.chapter-foot button{font-size:12px}.empty{padding:30px;color:var(--muted);display:none}.source-ledger{font-size:14px}.source-ledger h1{font-size:23px}.source-ledger h2{font-size:18px}.footer{border-top:1px solid var(--line);padding-top:25px;margin-top:40px;font-size:12px;color:var(--muted)}[hidden]{display:none!important}.skip{position:fixed;left:10px;top:-100px;z-index:20;background:var(--paper);padding:10px}.skip:focus{top:10px}
+@media(prefers-color-scheme:dark){:root{--bg:#131d19;--paper:#1b2721;--ink:#e2e9de;--muted:#abb6ac;--line:#35453a;--green:#abd28c;--lime:#293c2c;--cyan:#243a40;--orange:#423123;--accent:#eab087}.primary,.tabs button[aria-selected=true],.sidebar .start{background:#3c6344;color:#fff;border-color:#3c6344}.bar{background:#91ba78}.notice{border-color:#eab087}pre{background:#101a15}}
+@media(max-width:1050px){.layout{grid-template-columns:215px minmax(0,1fr)}.sidebar{padding:20px 12px}.main{padding:25px}.visuals{grid-template-columns:1fr}.top{padding:10px 16px}.brand span{display:none}}
+@media(max-width:720px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px 17px;max-height:190px}.sidebar nav{display:grid;grid-template-columns:1fr 1fr;gap:2px 7px}.sidebar .group{grid-column:1/-1}.sidebar .start{margin-bottom:6px}.sidebar p{display:none}.top{align-items:flex-start}.tools{flex-wrap:wrap;justify-content:flex-end}.search{width:175px;font-size:13px}.tools button{font-size:12px}.brand{max-width:135px;font-size:11px}.main{padding:20px 16px 50px}.hero{padding-top:10px}.hero .lead{font-size:15px}.panel{padding:18px}.chapter>summary{padding:17px 14px;font-size:15px}.chapter-body{padding:0 17px 20px}.reading-head{align-items:flex-start;flex-direction:column}.flow{min-width:580px}.hero h1{font-size:36px}}
+@media print{body{background:white;color:#111;font-size:11pt}.top,.sidebar,.hero-actions,.tools,.tabs,.chapter-foot,.reading-head label,.skip{display:none!important}.layout{display:block}.main{padding:0}.hero h1{font-size:28pt}.panel,.chapter{break-inside:avoid;box-shadow:none;border-color:#ccc}.chapter-body{display:block!important}.chapter{break-inside:auto}.flow{min-width:0}.node{break-inside:avoid}.visuals{display:block}.visuals .panel{margin-top:15px}pre{white-space:pre-wrap;background:#eee;color:#111}a{color:#111}table{min-width:0;font-size:9pt}.source-ledger{font-size:10pt}}
+</style>
+</head>
+<body>
+<a class="skip" href="#reading">跳至章節</a>
+<header class="top"><div class="brand">TRT-LLM FIELD NOTES<br><span>繁體中文 · 原始碼 · 架構 · 實驗</span></div>
+<div class="tools"><label><span class="sr" hidden>搜尋章節</span><input class="search" id="search" type="search" aria-label="搜尋章節，例如 FlashInfer 或 guards" placeholder="搜尋 FlashInfer、guards…"></label><button id="resume">回到書籤</button><button id="print">列印 / PDF</button></div></header>
+<div class="layout">
+<aside class="sidebar" aria-label="章節目錄"><p>先建立地圖，再深入一個接點。</p><a class="start" href="#chapter-23">醒來後，從這裡開始 ↗</a><nav>@@NAV@@</nav><p style="margin-top:25px">書籤只記閱讀位置。<br>課程驗收仍由你實際回答與練習決定。</p></aside>
+<main class="main" id="main">
+<section class="hero"><div class="kicker">REQUEST → COMPILER → KERNEL → GPU</div>
+<h1>看懂整個系統，<br>再讀懂<em>每一層程式碼。</em></h1>
+<p class="lead">從一個生成請求出發，串起 TensorRT-LLM、PyTorch 編譯流程與 FlashInfer。把算子融合、KV cache 與 CUDA Graphs 放回它們真正解決問題的位置。</p>
+<div class="meta"><span class="pill">13 集主題導讀</span><span class="pill">@@COUNT@@ 個閱讀章節</span><span class="pill">2026-10-27 核對</span><span class="pill">單檔離線閱讀</span></div>
+<div class="hero-actions"><a class="primary" style="padding:9px 17px;border-radius:8px;text-decoration:none" href="#chapter-01">先看整體架構 →</a><a style="padding:9px 14px" href="#chapter-17">直接讀 FlashInfer</a><a style="padding:9px 14px" href="#source-ledger">影片清單與來源</a></div>
+<div class="notice">已核對合集的 13 集標題與片長，尚未取得逐字稿。這是依影片主題、官方文件與 repo 寫成的原創導讀，不是已完整觀看的影片摘要。所有效能圖與例子皆為教學示意，未宣稱實測加速。</div></section>
+
+<section class="panel" aria-labelledby="map-heading"><h2 id="map-heading">一張地圖，三種視角</h2><p class="sub">點選節點，跳到對應解說。這是責任與資料流地圖，非直接函式呼叫圖。</p>
+<div class="tabs" role="tablist" aria-label="架構視角">
+<button role="tab" id="tab-serving" aria-selected="true" aria-controls="map-serving" data-view="serving">01 · Request 旅程</button>
+<button role="tab" id="tab-compiler" aria-selected="false" aria-controls="map-compiler" tabindex="-1" data-view="compiler">02 · 編譯器內部</button>
+<button role="tab" id="tab-kernels" aria-selected="false" aria-controls="map-kernels" tabindex="-1" data-view="kernels">03 · Kernel 生態</button></div>
+<div id="map-serving" role="tabpanel" aria-labelledby="tab-serving"><div class="diagram"><div class="flow">
+<a class="node" href="#chapter-02"><small>01 / INPUT</small><strong>API → Token IDs</strong><span>輸入處理、Request state</span></a>
+<a class="node" href="#chapter-03"><small>02 / ADMISSION</small><strong>Scheduler → Batch</strong><span>選 request、token budget</span></a>
+<a class="node orange" href="#chapter-18"><small>03 / RESOURCES</small><strong>KV pages → Metadata</strong><span>page table、長度、plan</span></a>
+<a class="node cyan" href="#chapter-20"><small>04 / EXECUTION</small><strong>Model Forward</strong><span>eager / compiled / graph</span></a>
+<a class="node cyan" href="#chapter-17"><small>05 / OPERATORS</small><strong>GPU Operators</strong><span>norm、GEMM、attention、MLP</span></a>
+<a class="node" href="#chapter-02"><small>06 / OUTPUT</small><strong>Sampling → Response</strong><span>更新狀態、逐步回應與資源回收</span></a>
+</div></div><p class="route">未完成：Sampling → 更新 Request → 下一輪 Scheduler。完成：交付結果並依相依性回收資源。</p></div>
+<div id="map-compiler" role="tabpanel" aria-labelledby="tab-compiler" hidden><div class="diagram"><div class="flow">
+<a class="node cyan" href="#chapter-05"><small>01 / CAPTURE</small><strong>Python → Dynamo</strong><span>FX graph、FakeTensor</span></a>
+<a class="node cyan" href="#chapter-06"><small>02 / VALIDITY</small><strong>Guards / Variants</strong><span>假設符合才能重用</span></a>
+<a class="node cyan" href="#chapter-07"><small>03 / TRANSFORMS</small><strong>AOT / Decomposition</strong><span>圖轉換與 mutation 語意</span></a>
+<a class="node cyan" href="#chapter-09"><small>04 / LOWERING</small><strong>Backend / Inductor</strong><span>IR、patterns、fusion</span></a>
+<a class="node orange" href="#chapter-15"><small>05 / CODE</small><strong>Generated / Library</strong><span>Triton 或外部 kernel 等實作</span></a>
+<a class="node" href="#chapter-14"><small>06 / SUBMISSION</small><strong>Launch / Replay</strong><span>相容條件下的 GPU 執行</span></a>
+</div></div><p class="route">編譯決定如何實作可優化區段；Runtime 決定這輪處理誰。CUDA Graphs 再處理重複提交的成本。</p></div>
+<div id="map-kernels" role="tabpanel" aria-labelledby="tab-kernels" hidden><div class="diagram"><div class="flow">
+<a class="node" href="#chapter-15"><small>LANGUAGE</small><strong>CUDA C++ / Triton</strong><span>撰寫 GPU 運算與存取</span></a>
+<a class="node" href="#chapter-15"><small>BUILDING BLOCKS</small><strong>CUTLASS / CuTe DSL</strong><span>layout、copy、MMA、pipeline</span></a>
+<a class="node orange" href="#chapter-15"><small>LIBRARY</small><strong>cuBLAS / cuBLASLt</strong><span>線性代數、GEMM 實作</span></a>
+<a class="node orange" href="#chapter-17"><small>INFERENCE LIBRARY</small><strong>FlashInfer</strong><span>attention、sampling、norm 等</span></a>
+<a class="node cyan" href="#chapter-19"><small>INTEGRATION</small><strong>Custom Op + Fake</strong><span>讓圖理解算子契約</span></a>
+<a class="node cyan" href="#chapter-21"><small>FOUNDATION</small><strong>Buffers / Streams</strong><span>ownership、ordering、lifetime</span></a>
+</div></div><p class="route">同一次 Forward 可以呼叫多種 library；「選 attention backend」不等於「全模型只用一套 kernel」。</p></div>
+<p class="diagram-note">從上層問題往下定位，再帶著 kernel 的限制回到整個 Request。</p></section>
+
+<div class="visuals">
+<section class="panel" aria-labelledby="fusion-heading"><h2 id="fusion-heading">融合省下哪些讀寫？</h2><p class="sub">square(relu(x)) · 理想化 FP16 tensor traffic</p>
+<div class="barrow"><span>Eager</span><div class="bar eager" style="width:100%"></div><strong>8 B / 元素</strong></div>
+<div class="barrow"><span>Fused</span><div class="bar" style="width:50%"></div><strong>4 B / 元素</strong></div>
+<p class="fine">兩次各讀寫一次 → 一次讀寫。這是資料量示意，不代表實測 HBM traffic 或兩倍加速。</p><a href="#chapter-04">讀取假設與限制 →</a></section>
+<section class="panel" aria-labelledby="kv-heading"><h2 id="kv-heading">讓 KV 長度跨過一頁</h2><p class="sub">教學 page-list · 每頁 16 tokens · B 固定 9 tokens</p>
+<div class="kv-controls"><label for="kv-length">A 長度</label><input id="kv-length" type="range" min="1" max="64" value="38"><output id="kv-value" for="kv-length">38 tokens</output></div>
+<div class="pages" id="kv-pages" aria-label="A 的實體頁"></div><div id="kv-result" class="kv-result" aria-live="polite"></div>
+<p class="fine">試試 31 → 32 → 33：有效長度、尾頁長度與 page count 如何變？這不直接決定能否重用 Graph。</p><a href="#chapter-18">讀懂 plan / run 與 metadata →</a></section>
+</div>
+
+<div class="reading-head" id="reading"><h2>從地圖，走進程式碼。</h2><label><input id="single" type="checkbox" checked> 一次展開一節</label></div>
+<div id="status" class="status" role="status">從第 01 節開始認識層次；第 23 節安排醒來後的三次短課。</div>
+<div id="chapters">@@CHAPTERS@@</div><p id="empty" class="empty">找不到符合的章節。可以試試 KV、Graph、FlashInfer 或 ownership。</p>
+<details class="panel source-ledger" id="source-ledger"><summary>來源核對紀錄 · 13 集影片清單</summary>@@SOURCES@@</details>
+<footer class="footer">教材內容來源：<a href="compiler-and-flashinfer-e2e.md">Markdown 筆記</a> · <a href="interview-preparation.md">完整課程地圖</a> · <a href="learning-progress.md">學習紀錄</a><br>HTML 為閱讀衍生版本。書籤只記閱讀位置，不會標記課程完成。無外部字型、CDN 或追蹤程式。</footer>
+</main></div>
+<script>
+'use strict';
+const chapters = [...document.querySelectorAll('.chapter')];
+const search = document.getElementById('search');
+const single = document.getElementById('single');
+const status = document.getElementById('status');
+let activeChapter = 'chapter-00';
+function focusChapter(id, scroll = true) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  if (search.value) { search.value = ''; filterChapters(); }
+  if (single.checked) chapters.forEach(ch => { if (ch !== target) ch.open = false; });
+  if (target.tagName === 'DETAILS') target.open = true;
+  activeChapter = id;
+  document.querySelectorAll('.sidebar nav a').forEach(a => {
+    const current = a.getAttribute('href') === '#' + id;
+    a.classList.toggle('active', current);
+    if (current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+  });
+  if (scroll) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[href^="#"]');
+  if (!link) return;
+  const id = link.getAttribute('href').slice(1);
+  if (id.startsWith('chapter-') || id === 'source-ledger') {
+    event.preventDefault();
+    focusChapter(id);
+    history.replaceState(null, '', '#' + id);
+  }
+});
+chapters.forEach(chapter => {
+  chapter.addEventListener('toggle', () => {
+    if (printState) return;
+    if (chapter.open) {
+      activeChapter = chapter.id;
+      if (single.checked && !search.value) chapters.forEach(other => { if (other !== chapter) other.open = false; });
+    }
+  });
+});
+function filterChapters() {
+  const query = search.value.trim().toLocaleLowerCase();
+  let count = 0;
+  chapters.forEach(ch => {
+    const matches = !query || ch.textContent.toLocaleLowerCase().includes(query);
+    ch.hidden = !matches;
+    if (matches) count++;
+    if (query) ch.open = matches;
+    else if (single.checked) ch.open = ch.id === activeChapter;
+  });
+  document.getElementById('empty').style.display = count ? 'none' : 'block';
+  status.textContent = query ? `找到 ${count} 個章節。搜尋只篩選章節，不改變學習驗收。` : '選一節閱讀；回答與練習紀錄以 learning-progress.md 為準。';
+}
+search.addEventListener('input', filterChapters);
+single.addEventListener('change', () => {
+  if (search.value) filterChapters();
+  else chapters.forEach(ch => ch.open = !single.checked || ch.id === activeChapter);
+});
+document.querySelectorAll('[data-bookmark]').forEach(button => button.addEventListener('click', () => {
+  try {
+    localStorage.setItem('trtllm-study-bookmark-v1', button.dataset.bookmark);
+    status.textContent = '已記住閱讀位置；這不代表完成課程驗收。';
+  } catch (error) {
+    if (error.name !== 'SecurityError' && error.name !== 'QuotaExceededError') throw error;
+    status.textContent = '瀏覽器無法保存書籤；可記下網址中的章節標記。';
+  }
+}));
+document.getElementById('resume').addEventListener('click', () => {
+  try {
+    const bookmark = localStorage.getItem('trtllm-study-bookmark-v1');
+    if (bookmark && document.getElementById(bookmark)) focusChapter(bookmark);
+    else status.textContent = '尚未儲存書籤。可用每節底部的「記住這一節」。';
+  } catch (error) {
+    if (error.name !== 'SecurityError') throw error;
+    status.textContent = '此瀏覽器不允許儲存書籤，可直接使用章節目錄。';
+  }
+});
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(button) {
+  tabs.forEach(tab => {
+    const selected = tab === button;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+  });
+}
+tabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectTab(tab));
+  tab.addEventListener('keydown', event => {
+    let next;
+    if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = tabs.length - 1;
+    if (next !== undefined) { event.preventDefault(); selectTab(tabs[next]); tabs[next].focus(); }
+  });
+});
+function updateKV() {
+  const tokens = Number(document.getElementById('kv-length').value);
+  const count = Math.ceil(tokens / 16);
+  const tail = (tokens - 1) % 16 + 1;
+  const ids = [7, 2, 9, 12].slice(0, count);
+  document.getElementById('kv-value').textContent = tokens + ' tokens';
+  const pages = document.getElementById('kv-pages');
+  pages.replaceChildren();
+  ids.forEach((id, index) => {
+    const used = index === count - 1 ? tail : 16;
+    const page = document.createElement('div');
+    page.className = 'page';
+    page.innerHTML = `<span>實體頁</span><strong>${id}</strong><span>${used} / 16</span><div class="fill"><i style="width:${used / 16 * 100}%"></i></div>`;
+    pages.append(page);
+  });
+  document.getElementById('kv-result').textContent = `indptr = [0, ${count}, ${count + 1}]\nindices = [${[...ids, 5].join(', ')}]\nlast_page_len = [${tail}, 9]`;
+}
+document.getElementById('kv-length').addEventListener('input', updateKV);
+updateKV();
+let printState = null;
+window.addEventListener('beforeprint', () => {
+  if (printState) return;
+  printState = [...document.querySelectorAll('details')].map(el => [el, el.open, el.hidden]);
+  printState.forEach(([el]) => { el.open = true; el.hidden = false; });
+});
+window.addEventListener('afterprint', () => {
+  if (printState) printState.forEach(([el, open, hidden]) => { el.open = open; el.hidden = hidden; });
+  printState = null;
+});
+document.getElementById('print').addEventListener('click', () => window.print());
+const initial = location.hash.slice(1);
+focusChapter(initial.startsWith('chapter-') ? initial : 'chapter-00', false);
+</script>
+</body></html>

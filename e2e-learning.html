@@ -1,0 +1,1144 @@
+<!doctype html>
+<!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+Reader template. Edit compiler-and-flashinfer-e2e.md for lesson content.
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>TensorRT-LLM · 從 Request 到 GPU</title>
+<style>
+:root{--bg:#f7f7f1;--paper:#fffef9;--ink:#24332c;--muted:#637169;--line:#dce2d9;--green:#2d6744;--lime:#e7f0d9;--cyan:#e2f0f2;--orange:#faecdc;--accent:#a04c2d;--shadow:0 12px 45px #24332c08}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:88px}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.85 system-ui,-apple-system,"Noto Sans TC","Microsoft JhengHei",sans-serif}
+a{color:var(--green);text-underline-offset:4px}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #b46c2f;outline-offset:4px}button{border:1px solid var(--line);border-radius:8px;padding:7px 13px;background:var(--paper);color:var(--ink)}button:hover{border-color:var(--green)}.top{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:12px 25px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:13px;letter-spacing:.09em;font-weight:750}.brand span{font-weight:400;color:var(--muted);letter-spacing:0}.tools{display:flex;gap:8px;align-items:center}.search{width:260px;border:1px solid var(--line);border-radius:8px;padding:7px 12px;background:var(--bg);color:var(--ink)}
+.layout{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1500px;margin:auto}.sidebar{position:sticky;top:73px;height:calc(100vh - 73px);overflow:auto;border-right:1px solid var(--line);padding:27px 20px}.sidebar p{font-size:12px;color:var(--muted);margin:0 0 12px}.sidebar a{display:block;font-size:13px;line-height:1.55;padding:8px 10px;border-radius:6px;text-decoration:none;color:var(--muted)}.sidebar a:hover,.sidebar a.active{background:var(--lime);color:var(--green)}.sidebar .group{font-size:11px;letter-spacing:.12em;font-weight:750;color:var(--green);margin:20px 10px 6px}.sidebar .start{background:var(--green);color:#fff;margin-bottom:16px}.main{padding:40px clamp(20px,4vw,65px) 80px;min-width:0}.hero{padding:20px 0 30px}.kicker{font-size:12px;color:var(--green);font-weight:750;letter-spacing:.15em}.hero h1{font-size:clamp(32px,4vw,53px);line-height:1.25;letter-spacing:-.035em;margin:15px 0 18px;font-weight:750}.hero h1 em{font-style:normal;color:var(--green)}.hero .lead{max-width:700px;color:var(--muted);font-size:17px}.meta{display:flex;gap:9px;flex-wrap:wrap;margin:22px 0}.pill{font-size:12px;border:1px solid var(--line);border-radius:30px;padding:3px 11px;background:var(--paper)}.hero-actions{display:flex;gap:10px;flex-wrap:wrap}.primary{background:var(--green);color:white;border-color:var(--green)}.notice{font-size:13px;line-height:1.8;border-left:3px solid #c58b50;padding:12px 16px;background:var(--orange);margin:20px 0;color:var(--ink)}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;margin:22px 0;padding:24px;box-shadow:var(--shadow)}.panel h2{margin:0;font-size:21px;line-height:1.5}.panel .sub{color:var(--muted);font-size:13px;margin:5px 0 18px}.tabs{display:flex;gap:7px;flex-wrap:wrap;margin:20px 0}.tabs button[aria-selected=true]{background:var(--green);color:white;border-color:var(--green)}.diagram{overflow:auto}.flow{min-width:600px;display:grid;grid-template-columns:repeat(3,1fr);gap:13px;position:relative}.node{position:relative;min-height:101px;text-align:left;border:1px solid var(--line);padding:16px;border-radius:10px;display:flex;flex-direction:column;justify-content:center;gap:3px;background:var(--lime);text-decoration:none}.node:hover{transform:translateY(-2px);box-shadow:0 6px 16px #24332c12}.node small{font-size:11px;letter-spacing:.06em;color:var(--muted)}.node strong{font-size:17px;line-height:1.5}.node span{font-size:12px;color:var(--muted)}.node.cyan{background:var(--cyan)}.node.orange{background:var(--orange)}.route{margin:15px 0 0;font-size:13px;color:var(--muted);padding:10px 13px;border:1px dashed var(--line);border-radius:8px}.diagram-note{font-size:12px;color:var(--muted);margin-top:13px}.visuals{display:grid;grid-template-columns:1fr 1fr;gap:20px}.visuals .panel{margin:0}.barrow{display:grid;grid-template-columns:55px 1fr 55px;align-items:center;gap:10px;margin:17px 0;font-size:12px}.bar{height:21px;border-radius:4px;background:var(--green)}.bar.eager{background:#bf8b5f}.fine{font-size:12px;color:var(--muted);line-height:1.7}.kv-controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:14px 0}.kv-controls input{flex:1;min-width:120px;accent-color:var(--green)}.pages{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0}.page{width:64px;padding:7px 5px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:11px;background:var(--bg)}.page strong{display:block;font-size:14px}.fill{height:5px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.fill i{height:100%;display:block;background:var(--green)}.kv-result{font-size:12px;font-family:ui-monospace,monospace;white-space:pre-wrap;background:var(--bg);padding:10px;border-radius:7px;line-height:1.7}
+.reading-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:42px 0 15px}.reading-head h2{font-size:24px;margin:0}.reading-head label{font-size:13px;color:var(--muted)}.status{font-size:13px;color:var(--muted);min-height:25px}.chapter{background:var(--paper);border:1px solid var(--line);border-radius:11px;margin:12px 0;scroll-margin-top:90px}.chapter[open]{box-shadow:var(--shadow)}.chapter>summary{cursor:pointer;list-style:none;display:flex;gap:13px;align-items:center;padding:20px;font-weight:650;font-size:17px;line-height:1.6}.chapter>summary::-webkit-details-marker{display:none}.chapter>summary::after{content:'＋';margin-left:auto;font-size:20px;color:var(--green)}.chapter[open]>summary::after{content:'−'}.num{font:12px ui-monospace,monospace;color:var(--green);background:var(--lime);padding:5px 7px;border-radius:5px;flex:none}.chapter-body{padding:0 25px 22px;overflow-wrap:anywhere}.chapter-body p{max-width:80ch;margin:15px 0}.chapter-body h3{font-size:19px;margin:28px 0 10px}.chapter-body h4{font-size:16px}.chapter-body ul,.chapter-body ol{padding-left:24px}.chapter-body li{margin:7px 0}.table-wrap{overflow-x:auto;margin:18px 0}table{width:100%;border-collapse:collapse;font-size:13px;min-width:540px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:12px 10px;line-height:1.8}th{background:var(--lime);font-weight:650}td:first-child{font-weight:550}pre{padding:20px;border-radius:9px;background:#20332b;color:#eef5e8;overflow:auto;font-size:13px;line-height:1.8}code{font: .88em/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--lime);color:var(--green);padding:2px 5px;border-radius:4px}pre code{background:none;color:inherit;padding:0;font-size:inherit}blockquote{margin:20px 0;border-left:3px solid var(--green);padding:0 16px;color:var(--muted)}.chapter-foot{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:16px;margin-top:24px}.chapter-foot button{font-size:12px}.empty{padding:30px;color:var(--muted);display:none}.source-ledger{font-size:14px}.source-ledger h1{font-size:23px}.source-ledger h2{font-size:18px}.footer{border-top:1px solid var(--line);padding-top:25px;margin-top:40px;font-size:12px;color:var(--muted)}[hidden]{display:none!important}.skip{position:fixed;left:10px;top:-100px;z-index:20;background:var(--paper);padding:10px}.skip:focus{top:10px}
+@media(prefers-color-scheme:dark){:root{--bg:#131d19;--paper:#1b2721;--ink:#e2e9de;--muted:#abb6ac;--line:#35453a;--green:#abd28c;--lime:#293c2c;--cyan:#243a40;--orange:#423123;--accent:#eab087}.primary,.tabs button[aria-selected=true],.sidebar .start{background:#3c6344;color:#fff;border-color:#3c6344}.bar{background:#91ba78}.notice{border-color:#eab087}pre{background:#101a15}}
+@media(max-width:1050px){.layout{grid-template-columns:215px minmax(0,1fr)}.sidebar{padding:20px 12px}.main{padding:25px}.visuals{grid-template-columns:1fr}.top{padding:10px 16px}.brand span{display:none}}
+@media(max-width:720px){.layout{display:block}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px 17px;max-height:190px}.sidebar nav{display:grid;grid-template-columns:1fr 1fr;gap:2px 7px}.sidebar .group{grid-column:1/-1}.sidebar .start{margin-bottom:6px}.sidebar p{display:none}.top{align-items:flex-start}.tools{flex-wrap:wrap;justify-content:flex-end}.search{width:175px;font-size:13px}.tools button{font-size:12px}.brand{max-width:135px;font-size:11px}.main{padding:20px 16px 50px}.hero{padding-top:10px}.hero .lead{font-size:15px}.panel{padding:18px}.chapter>summary{padding:17px 14px;font-size:15px}.chapter-body{padding:0 17px 20px}.reading-head{align-items:flex-start;flex-direction:column}.flow{min-width:580px}.hero h1{font-size:36px}}
+@media print{body{background:white;color:#111;font-size:11pt}.top,.sidebar,.hero-actions,.tools,.tabs,.chapter-foot,.reading-head label,.skip{display:none!important}.layout{display:block}.main{padding:0}.hero h1{font-size:28pt}.panel,.chapter{break-inside:avoid;box-shadow:none;border-color:#ccc}.chapter-body{display:block!important}.chapter{break-inside:auto}.flow{min-width:0}.node{break-inside:avoid}.visuals{display:block}.visuals .panel{margin-top:15px}pre{white-space:pre-wrap;background:#eee;color:#111}a{color:#111}table{min-width:0;font-size:9pt}.source-ledger{font-size:10pt}}
+</style>
+</head>
+<body>
+<a class="skip" href="#reading">跳至章節</a>
+<header class="top"><div class="brand">TRT-LLM FIELD NOTES<br><span>繁體中文 · 原始碼 · 架構 · 實驗</span></div>
+<div class="tools"><label><span class="sr" hidden>搜尋章節</span><input class="search" id="search" type="search" aria-label="搜尋章節，例如 FlashInfer 或 guards" placeholder="搜尋 FlashInfer、guards…"></label><button id="resume">回到書籤</button><button id="print">列印 / PDF</button></div></header>
+<div class="layout">
+<aside class="sidebar" aria-label="章節目錄"><p>先建立地圖，再深入一個接點。</p><a class="start" href="#chapter-23">醒來後，從這裡開始 ↗</a><nav><div class="group">建立地圖 · 00—03</div>
+<a href="#chapter-00">00 · 來源、範圍與閱讀方式</a>
+<a href="#chapter-01">01 · 先把這些名字放回正確的層</a>
+<a href="#chapter-02">02 · 一個 Request 的完整旅程</a>
+<a href="#chapter-03">03 · 三條流程同時存在</a>
+<div class="group">13 集主題 · 04—16</div>
+<a href="#chapter-04">04 · 第 01 集主題：為什麼要算子融合</a>
+<a href="#chapter-05">05 · 第 02 集主題：Dynamo 如何抓圖</a>
+<a href="#chapter-06">06 · 第 03 集主題：Guards 與動態形狀</a>
+<a href="#chapter-07">07 · 第 04 集主題：AOTAutograd 為什麼出現在這裡</a>
+<a href="#chapter-08">08 · 第 05 集主題：Decomposition 與 Functionalization</a>
+<a href="#chapter-09">09 · 第 06 集主題：Inductor IR 與中間值</a>
+<a href="#chapter-10">10 · 第 07 集主題：Compiler Scheduling 與融合限制</a>
+<a href="#chapter-11">11 · 第 08 集主題：Triton 的 Program 與 Block</a>
+<a href="#chapter-12">12 · 第 09 集主題：編譯快取不是一種快取</a>
+<a href="#chapter-13">13 · 第 10 集主題：GEMM Templates 與 Autotune</a>
+<a href="#chapter-14">14 · 第 11 集主題：CUDA Graphs 省掉什麼</a>
+<a href="#chapter-15">15 · 第 12 集主題：Triton、CUTLASS、cuBLAS、CuTe DSL</a>
+<a href="#chapter-16">16 · 第 13 集主題：動態 Request 如何重用 Graph</a>
+<div class="group">FlashInfer 與接縫 · 17—21</div>
+<a href="#chapter-17">17 · FlashInfer：它在 TRT-LLM 裡究竟做什麼</a>
+<a href="#chapter-18">18 · FlashInfer 的 Plan / Run 與 Paged KV</a>
+<a href="#chapter-19">19 · Custom Op 與 Fake Implementation：如何接上編譯器</a>
+<a href="#chapter-20">20 · Piecewise CUDA Graph：編譯與 Library 的接縫</a>
+<a href="#chapter-21">21 · 把資源生命週期接回 M01</a>
+<div class="group">驗證、短課與來源 · 22—25</div>
+<a href="#chapter-22">22 · 怎樣驗證整套優化有效</a>
+<a href="#chapter-23">23 · 醒來後如何開始：三次短課</a>
+<a href="#chapter-24">24 · 帶著問題讀 Repo</a>
+<a href="#chapter-25">25 · 本地原始碼導航</a>
+<div class="group">回到完整模型 · 26—28</div>
+<a href="#chapter-26">26 · FlashAttention、PagedAttention 與 FlashInfer 的關係</a>
+<a href="#chapter-27">27 · 把兩個 Requests 從 Prefill 追到第一輪 Decode</a>
+<a href="#chapter-28">28 · 擴展到多 GPU：哪幾層開始改變</a></nav><p style="margin-top:25px">書籤只記閱讀位置。<br>課程驗收仍由你實際回答與練習決定。</p></aside>
+<main class="main" id="main">
+<section class="hero"><div class="kicker">REQUEST → COMPILER → KERNEL → GPU</div>
+<h1>看懂整個系統，<br>再讀懂<em>每一層程式碼。</em></h1>
+<p class="lead">從一個生成請求出發，串起 TensorRT-LLM、PyTorch 編譯流程與 FlashInfer。把算子融合、KV cache 與 CUDA Graphs 放回它們真正解決問題的位置。</p>
+<div class="meta"><span class="pill">13 集主題導讀</span><span class="pill">29 個閱讀章節</span><span class="pill">2026-10-27 核對</span><span class="pill">單檔離線閱讀</span></div>
+<div class="hero-actions"><a class="primary" style="padding:9px 17px;border-radius:8px;text-decoration:none" href="#chapter-01">先看整體架構 →</a><a style="padding:9px 14px" href="#chapter-17">直接讀 FlashInfer</a><a style="padding:9px 14px" href="#source-ledger">影片清單與來源</a></div>
+<div class="notice">已核對合集的 13 集標題與片長，尚未取得逐字稿。這是依影片主題、官方文件與 repo 寫成的原創導讀，不是已完整觀看的影片摘要。所有效能圖與例子皆為教學示意，未宣稱實測加速。</div></section>
+
+<section class="panel" aria-labelledby="map-heading"><h2 id="map-heading">一張地圖，三種視角</h2><p class="sub">點選節點，跳到對應解說。這是責任與資料流地圖，非直接函式呼叫圖。</p>
+<div class="tabs" role="tablist" aria-label="架構視角">
+<button role="tab" id="tab-serving" aria-selected="true" aria-controls="map-serving" data-view="serving">01 · Request 旅程</button>
+<button role="tab" id="tab-compiler" aria-selected="false" aria-controls="map-compiler" tabindex="-1" data-view="compiler">02 · 編譯器內部</button>
+<button role="tab" id="tab-kernels" aria-selected="false" aria-controls="map-kernels" tabindex="-1" data-view="kernels">03 · Kernel 生態</button></div>
+<div id="map-serving" role="tabpanel" aria-labelledby="tab-serving"><div class="diagram"><div class="flow">
+<a class="node" href="#chapter-02"><small>01 / INPUT</small><strong>API → Token IDs</strong><span>輸入處理、Request state</span></a>
+<a class="node" href="#chapter-03"><small>02 / ADMISSION</small><strong>Scheduler → Batch</strong><span>選 request、token budget</span></a>
+<a class="node orange" href="#chapter-18"><small>03 / RESOURCES</small><strong>KV pages → Metadata</strong><span>page table、長度、plan</span></a>
+<a class="node cyan" href="#chapter-20"><small>04 / EXECUTION</small><strong>Model Forward</strong><span>eager / compiled / graph</span></a>
+<a class="node cyan" href="#chapter-17"><small>05 / OPERATORS</small><strong>GPU Operators</strong><span>norm、GEMM、attention、MLP</span></a>
+<a class="node" href="#chapter-02"><small>06 / OUTPUT</small><strong>Sampling → Response</strong><span>更新狀態、逐步回應與資源回收</span></a>
+</div></div><p class="route">未完成：Sampling → 更新 Request → 下一輪 Scheduler。完成：交付結果並依相依性回收資源。</p></div>
+<div id="map-compiler" role="tabpanel" aria-labelledby="tab-compiler" hidden><div class="diagram"><div class="flow">
+<a class="node cyan" href="#chapter-05"><small>01 / CAPTURE</small><strong>Python → Dynamo</strong><span>FX graph、FakeTensor</span></a>
+<a class="node cyan" href="#chapter-06"><small>02 / VALIDITY</small><strong>Guards / Variants</strong><span>假設符合才能重用</span></a>
+<a class="node cyan" href="#chapter-07"><small>03 / TRANSFORMS</small><strong>AOT / Decomposition</strong><span>圖轉換與 mutation 語意</span></a>
+<a class="node cyan" href="#chapter-09"><small>04 / LOWERING</small><strong>Backend / Inductor</strong><span>IR、patterns、fusion</span></a>
+<a class="node orange" href="#chapter-15"><small>05 / CODE</small><strong>Generated / Library</strong><span>Triton 或外部 kernel 等實作</span></a>
+<a class="node" href="#chapter-14"><small>06 / SUBMISSION</small><strong>Launch / Replay</strong><span>相容條件下的 GPU 執行</span></a>
+</div></div><p class="route">編譯決定如何實作可優化區段；Runtime 決定這輪處理誰。CUDA Graphs 再處理重複提交的成本。</p></div>
+<div id="map-kernels" role="tabpanel" aria-labelledby="tab-kernels" hidden><div class="diagram"><div class="flow">
+<a class="node" href="#chapter-15"><small>LANGUAGE</small><strong>CUDA C++ / Triton</strong><span>撰寫 GPU 運算與存取</span></a>
+<a class="node" href="#chapter-15"><small>BUILDING BLOCKS</small><strong>CUTLASS / CuTe DSL</strong><span>layout、copy、MMA、pipeline</span></a>
+<a class="node orange" href="#chapter-15"><small>LIBRARY</small><strong>cuBLAS / cuBLASLt</strong><span>線性代數、GEMM 實作</span></a>
+<a class="node orange" href="#chapter-17"><small>INFERENCE LIBRARY</small><strong>FlashInfer</strong><span>attention、sampling、norm 等</span></a>
+<a class="node cyan" href="#chapter-19"><small>INTEGRATION</small><strong>Custom Op + Fake</strong><span>讓圖理解算子契約</span></a>
+<a class="node cyan" href="#chapter-21"><small>FOUNDATION</small><strong>Buffers / Streams</strong><span>ownership、ordering、lifetime</span></a>
+</div></div><p class="route">同一次 Forward 可以呼叫多種 library；「選 attention backend」不等於「全模型只用一套 kernel」。</p></div>
+<p class="diagram-note">從上層問題往下定位，再帶著 kernel 的限制回到整個 Request。</p></section>
+
+<div class="visuals">
+<section class="panel" aria-labelledby="fusion-heading"><h2 id="fusion-heading">融合省下哪些讀寫？</h2><p class="sub">square(relu(x)) · 理想化 FP16 tensor traffic</p>
+<div class="barrow"><span>Eager</span><div class="bar eager" style="width:100%"></div><strong>8 B / 元素</strong></div>
+<div class="barrow"><span>Fused</span><div class="bar" style="width:50%"></div><strong>4 B / 元素</strong></div>
+<p class="fine">兩次各讀寫一次 → 一次讀寫。這是資料量示意，不代表實測 HBM traffic 或兩倍加速。</p><a href="#chapter-04">讀取假設與限制 →</a></section>
+<section class="panel" aria-labelledby="kv-heading"><h2 id="kv-heading">讓 KV 長度跨過一頁</h2><p class="sub">教學 page-list · 每頁 16 tokens · B 固定 9 tokens</p>
+<div class="kv-controls"><label for="kv-length">A 長度</label><input id="kv-length" type="range" min="1" max="64" value="38"><output id="kv-value" for="kv-length">38 tokens</output></div>
+<div class="pages" id="kv-pages" aria-label="A 的實體頁"></div><div id="kv-result" class="kv-result" aria-live="polite"></div>
+<p class="fine">試試 31 → 32 → 33：有效長度、尾頁長度與 page count 如何變？這不直接決定能否重用 Graph。</p><a href="#chapter-18">讀懂 plan / run 與 metadata →</a></section>
+</div>
+
+<div class="reading-head" id="reading"><h2>從地圖，走進程式碼。</h2><label><input id="single" type="checkbox" checked> 一次展開一節</label></div>
+<div id="status" class="status" role="status">從第 01 節開始認識層次；第 23 節安排醒來後的三次短課。</div>
+<div id="chapters"><details class="chapter" id="chapter-00"><summary><span class="num">00</span>來源、範圍與閱讀方式</summary><div class="chapter-body"><p>查閱日期：2026-10-27；TensorRT-LLM checkout：<code>e921fa39b07c669f2633ac95390fd9deac32d92b</code>。</p>
+<p>你提供的是 Cishoon 的「torch 編譯器」合集，共 13 集、3 小時 29 分 16 秒。
+已取得並交叉核對標題、BV ID、片長；完整清單與限制見 <a href="bilibili-compiler-sources.md">影片來源紀錄</a>。
+<strong>未觀看完整影片、未取得逐字稿。</strong> 影片頁與 view API 回傳 412；匿名 player API 成功，但 13 集均未回傳字幕清單。
+這只代表目前匿名存取拿不到字幕，不能推斷影片沒有字幕。
+以下逐集段落依影片標題安排主題，技術內容來自官方文件、本地原始碼與原創教學推導；不是講者逐字或逐段摘要。
+FlashInfer 是依你的要求補充，不聲稱合集已涵蓋它。</p>
+<p>本 checkout 的 <a href="requirements.txt">requirements.txt</a> 指定 <code>flashinfer-python==0.6.18</code>、<code>triton==3.8.0</code>，
+PyTorch 約束為 <code>&gt;=2.14.0a0,&lt;=2.14.0</code>。這是相依宣告，<strong>不是本機已安裝版本的證據</strong>。
+外部 FlashInfer 文件查閱時顯示 0.7.2.post1；以它說明概念，實際 API 與支援範圍以 checkout 和對應版本為準。</p>
+<p>推薦閱讀三輪：</p>
+<ol>
+<li>第一輪讀 01～03：知道每個名字在哪一層，以及一個 request 怎麼走完。</li>
+<li>第二輪讀 04～16：按 13 集主題理解編譯流程，每集對照一個 repo 接點。</li>
+<li>第三輪讀 17～23：深入 FlashInfer、Graph、KV metadata 與效能驗證，再做練習。</li>
+</ol>
+<p>26～28 是回接完整模型的補充：attention 原理、兩筆 requests 的手算，以及多 GPU 的架構變化。</p>
+<p>每節只抓「解決什麼問題、輸入輸出、架構位置、限制」。看過教材不代表已驗收。</p><div class="chapter-foot"><button data-bookmark="chapter-00">記住這一節</button><a href="#chapter-01">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-01"><summary><span class="num">01</span>先把這些名字放回正確的層</summary><div class="chapter-body"><div class="table-wrap"><table>
+<thead>
+<tr>
+<th>層次</th>
+<th>元件</th>
+<th>負責的事</th>
+<th>不可混淆的邊界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serving / runtime</td>
+<td>TensorRT-LLM、vLLM、SGLang</td>
+<td>接請求、排程、資源管理、組 batch、執行模型、交付回應</td>
+<td>是完整推論系統；不能只用一個 kernel 的速度比較</td>
+</tr>
+<tr>
+<td>模型程式</td>
+<td>PyTorch modules</td>
+<td>描述 attention、MLP、normalization 等運算與資料關係</td>
+<td>模型寫成 Python，不代表底下 GPU 運算由 Python 計算</td>
+</tr>
+<tr>
+<td>圖擷取</td>
+<td>TorchDynamo</td>
+<td>分析 Python 執行、取得 FX 圖與重用條件</td>
+<td>不是 CUDA Graph capture</td>
+</tr>
+<tr>
+<td>圖轉換</td>
+<td>AOTAutograd、decomposition、functionalization</td>
+<td>整理運算、處理 mutation；訓練時也處理 forward/backward 關係</td>
+<td>名稱包含 autograd，不代表 inference 一定算 backward</td>
+</tr>
+<tr>
+<td>Lowering / codegen</td>
+<td>TorchInductor</td>
+<td>從圖與迴圈表示安排計算，產生 kernel 或呼叫外部實作</td>
+<td>不保證所有算子都生成 Triton</td>
+</tr>
+<tr>
+<td>GPU 程式開發</td>
+<td>CUDA C++、Triton、CuTe DSL</td>
+<td>寫出要在 GPU 執行的運算與資料配置</td>
+<td>Triton 與 CuTe DSL 不是 serving server</td>
+</tr>
+<tr>
+<td>Kernel / operator libraries</td>
+<td>cuBLAS、CUTLASS、FlashInfer、FlashAttention 實作</td>
+<td>提供可重用或可組合的高效算子</td>
+<td>API 名稱不一定等於最終執行的 kernel 家族</td>
+</tr>
+<tr>
+<td>提交 GPU 工作</td>
+<td>CUDA streams、CUDA Graphs</td>
+<td>定義順序、依賴，降低重複提交成本</td>
+<td>Graph replay 本身不等於把多個 kernel 融成一個</td>
+</tr>
+<tr>
+<td>硬體</td>
+<td>SM、warp、register、shared memory、L2、HBM、Tensor Core</td>
+<td>實際執行與搬運資料</td>
+<td>一個瓶頸可以來自多層，不能只看利用率百分比</td>
+</tr>
+</tbody>
+</table></div>
+<p>FlashAttention 一詞常指 IO-aware exact attention 演算法家族，也可能指其程式庫實作。
+FlashInfer 是提供 attention 等推論算子的 library。兩者不能只當作互斥品牌；某些 library 路徑會使用不同 attention kernel 家族。
+<a href="https://github.com/flashinfer-ai/flashinfer">FlashInfer 官方介紹</a>、<a href="https://github.com/NVIDIA/cutlass">CUTLASS 官方介紹</a>。</p><div class="chapter-foot"><button data-bookmark="chapter-01">記住這一節</button><a href="#chapter-02">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-02"><summary><span class="num">02</span>一個 Request 的完整旅程</summary><div class="chapter-body"><p>以下用單 GPU、decoder-only、自回歸生成作為基準。多模態、MoE 與 speculative decoding 之後再加。</p>
+<h3>初始化：先把可重用的工作準備好</h3>
+<p>讀 model config 與權重，建立 PyTorch model，選算子與 attention backend，配置 workspace 和 KV 資源。
+依實際選項執行 warmup、JIT、autotune、compile、Graph capture。這些成本可能發生在不同階段，不能全算成一次「編譯」。
+入口：<a href="tensorrt_llm/_torch/pyexecutor/model_loader.py">model_loader.py</a>、<a href="tensorrt_llm/_torch/pyexecutor/model_engine.py">model_engine.py</a>。</p>
+<h3>接收：文字變成 Request</h3>
+<p>API 接收 prompt 與 sampling 設定，輸入處理得到 token IDs，request 保存生成狀態與限制。
+Streaming 決定回應的交付方式，與模型每輪如何計算是相關但不同的介面。
+入口：<a href="tensorrt_llm/llmapi/llm.py">BaseLLM.generate / generate_async</a>、<a href="tensorrt_llm/_torch/pyexecutor/llm_request.py">LlmRequest</a>。</p>
+<h3>選工作：Scheduler 決定這輪執行誰</h3>
+<p>檢查 request 是否能容納、token budget 與 KV 資源，再組成本輪 batch。
+這個 batch 可能是 prefill、decode 或 mixed；request 數量、query token 數量、KV 長度不是同一個數字。
+入口：<a href="tensorrt_llm/_torch/pyexecutor/py_executor.py">PyExecutor._schedule</a>、<a href="tensorrt_llm/_torch/pyexecutor/scheduler/scheduler.py">scheduler.py</a>。</p>
+<h3>做運算：Model Engine 執行一次 Forward</h3>
+<p>準備張量與 metadata，選 eager、compiled callable、Graph replay 或相容的分段路徑。
+Transformer 各層進行 norm、QKV projection、position encoding、attention、output projection 與 MLP。
+使用哪個 kernel 由模型、dtype、shape、GPU、quantization 與設定共同決定。
+入口：<a href="tensorrt_llm/_torch/pyexecutor/model_engine.py">PyTorchModelEngine.forward</a>、<a href="tensorrt_llm/_torch/models/modeling_llama.py">modeling_llama.py</a>。</p>
+<h3>選 Token：Logits 變成生成結果</h3>
+<p>logits 經過必要的 penalties、temperature、篩選與 sampling；結果更新 request state。
+未完成的 request 留待下一輪，完成或取消的 request 依實作流程釋放資源並交付回應。
+入口：<a href="tensorrt_llm/_torch/pyexecutor/sampler/sampler.py">sampler.py</a>、<a href="tensorrt_llm/_torch/pyexecutor/sampler/ops/flashinfer.py">sampler/ops/flashinfer.py</a>。</p>
+<p><strong>本節檢查：</strong> 編譯器優化 model forward，為什麼不等於它接手了整個 request scheduler？</p><div class="chapter-foot"><button data-bookmark="chapter-02">記住這一節</button><a href="#chapter-03">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-03"><summary><span class="num">03</span>三條流程同時存在</summary><div class="chapter-body"><pre><code class="language-text">服務流程：Request → Scheduler → KV resources → Model forward → Sampling → Response
+                                        ↑ 每個 iteration 的交界
+編譯流程：Python → Dynamo / guards → 圖轉換 → backend / Inductor → generated / external kernels
+                                        ↓ 可供執行的 callable
+執行流程：metadata 更新 → eager launch / CUDA Graph replay → GPU 完成 → 更新 request
+</code></pre>
+<p>這些是概念與責任分工，不保證每一條邊都是直接函式呼叫。
+編譯不是每個 request 都從零做；Graph replay 仍需要有效資料、metadata 與資源生命週期。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>都叫 scheduler / plan</th>
+<th>管理的對象</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Serving scheduler</td>
+<td>request 與 token budget</td>
+<td>誰進 batch、長 prompt 切多少</td>
+</tr>
+<tr>
+<td>Compiler scheduler</td>
+<td>圖節點、迴圈、資料依賴</td>
+<td>哪些運算能融合、先後順序</td>
+</tr>
+<tr>
+<td>FlashInfer planning</td>
+<td>attention 工作切分與相關 metadata</td>
+<td>page tables、head dims、workspace</td>
+</tr>
+<tr>
+<td>GPU hardware scheduling</td>
+<td>blocks、warps、SM 執行資源</td>
+<td>哪些 block/warp 可被排上硬體</td>
+</tr>
+</tbody>
+</table></div>
+<p>理解第 07 集的「調度器」時，先確認它指編譯器，不要與 PyExecutor request scheduling 混在一起。</p><div class="chapter-foot"><button data-bookmark="chapter-03">記住這一節</button><a href="#chapter-04">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-04"><summary><span class="num">04</span>第 01 集主題：為什麼要算子融合</summary><div class="chapter-body"><p><strong>問題：</strong> GPU 做很簡單的逐元素運算時，算術可能不是主要成本。</p>
+<p>以 <code>square(relu(x))</code> 為例，eager 可能先產生 ReLU intermediate，再執行平方。
+若兩次各讀寫全部 FP16 元素，理想化 tensor traffic 為每元素 8 bytes；融合成一次讀、一次寫則為 4 bytes。
+這是 tensor 讀寫量模型，不是實測 HBM traffic，也不包含 allocator、cache 或其他成本。</p>
+<p>融合可省 intermediate 的讀寫與部分 launch 成本，但可能增加 register pressure、編譯時間或限制其他重用。
+小 workload 可能偏 launch-bound，大 workload 可能偏 bandwidth-bound；不能把標題的「99%」套用所有情境。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/fused_relu2_triton.py">fused_relu2_triton.py</a> 第 26 行的 <code>_relu2_kernel</code>。
+這是手寫 Triton 融合案例，不是已證明由 Inductor 自動產生的輸出。</p>
+<p><strong>練習：</strong> 畫 eager 與 fused 版本每次 load/store；列出 dtype、NaN 與 aliasing 需要核對的條件。</p><div class="chapter-foot"><button data-bookmark="chapter-04">記住這一節</button><a href="#chapter-05">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-05"><summary><span class="num">05</span>第 02 集主題：Dynamo 如何抓圖</summary><div class="chapter-body"><p><strong>問題：</strong> 編譯器如何從動態 Python 程式看見可優化的 tensor 運算？</p>
+<p>Dynamo 透過 Python frame/bytecode 層的分析，將可處理的 PyTorch 操作整理成 FX graph，交給可替換 backend。
+FakeTensor 可以攜帶 shape、dtype、stride 等資訊，而不執行對應的大型真實 tensor 計算。
+不代表原始 Python 的任何副作用都不執行，也不代表第一次呼叫完全沒有真實運算。</p>
+<p>無法納入的部分可能產生 graph break；在要求 fullgraph 的情況，這可能直接成為錯誤，而不是默默切圖。
+資料值控制的 Python branching 與只依 shape 決定的分支，也要分開分析。
+<a href="https://docs.pytorch.org/docs/main/user_guide/torch_compiler/torch.compiler_dynamo_overview.html">Dynamo 官方說明</a>。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/pyexecutor/model_engine.py">model_engine.py</a> 第 490 行建立自訂 <code>Backend</code>，511 行附近傳給 <code>torch.compile</code>。
+這是條件式路徑，要先讀第 434 行附近的 compile 設定與 model 分支。</p>
+<p><strong>練習：</strong> 用紙筆畫 <code>relu(x + y)</code> 的 FX 概念圖，區分 tensor metadata 與 tensor 內容。</p><div class="chapter-foot"><button data-bookmark="chapter-05">記住這一節</button><a href="#chapter-06">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-06"><summary><span class="num">06</span>第 03 集主題：Guards 與動態形狀</summary><div class="chapter-body"><p><strong>問題：</strong> 同一份 compiled code 何時可以安全重用？</p>
+<p>Guard 是編譯假設的檢查，例如 dtype、shape/stride、Python 值或 module state。
+有符合的已編譯變體就重用；沒有時可能觸發 tracing/compilation，達到限制後的行為取決於版本與設定。
+Graph break 是圖擷取的邊界；guard failure 是某份已編譯變體的假設不成立，兩者不是同義詞。</p>
+<p>符號維度可讓一份程式支援多種尺寸，但不會消除所有假設與分支 specialization。
+因此「換十種形狀只編譯兩次」要有實際程式與 logs 才能重現，不能視為固定規則。
+<a href="https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.reducing_guard_overhead.html">Guards 與 runtime overhead</a>。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/compilation/backend.py">Backend.<strong>call</strong></a> 第 187 行，讀取 <code>FakeTensor</code> 中的 token 維度以銜接 piecewise 邏輯。
+TRT-LLM compile graph 可支援哪些 shape，與它 capture 了哪些 CUDA Graph buckets，是兩個問題。</p>
+<p><strong>練習：</strong> 預測只改內容、改 shape、改 dtype、改 stride，各可能使哪種假設失效；再用 logs 驗證。</p><div class="chapter-foot"><button data-bookmark="chapter-06">記住這一節</button><a href="#chapter-07">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-07"><summary><span class="num">07</span>第 04 集主題：AOTAutograd 為什麼出現在這裡</summary><div class="chapter-body"><p><strong>問題：</strong> 訓練時 forward/backward 如何一起被整理？推論又為何見到這個名字？</p>
+<p>訓練需要 backward，編譯流程可分析 forward 保存哪些值、哪些值重算，權衡運算與記憶體。
+這是 compiler 的圖轉換階段，不代表 Python model 需要改成另一種訓練框架。</p>
+<p>推論沒有梯度需求時，不應因此虛構 backward 計算；但框架仍可能重用這一層的圖整理與 decomposition infrastructure。
+<strong>本 checkout 的直接證據：</strong> <a href="tensorrt_llm/_torch/compilation/backend.py">backend.py</a> 第 222 行呼叫
+<code>aot_module_simplified(..., fw_compiler=self.optimize, decompositions=select_decomp_table())</code>。</p>
+<p><strong>練習：</strong> 沿這個呼叫找 <code>fw_compiler</code> 實際是哪個函式；說明為何看到 <code>aot_autograd</code> import 不足以證明 inference 執行 backward。</p><div class="chapter-foot"><button data-bookmark="chapter-07">記住這一節</button><a href="#chapter-08">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-08"><summary><span class="num">08</span>第 05 集主題：Decomposition 與 Functionalization</summary><div class="chapter-body"><p><strong>問題：</strong> 編譯器如何支援大量高階算子，以及有原地修改的程式？</p>
+<p>Decomposition 把選定高階操作轉成較基礎的操作組合，減少後端需要獨立支援的語意。
+Functionalization 用較容易分析的形式表達 mutation 與 aliasing，讓資料相依關係清楚。
+這不是允許忽略副作用；正確性要求觀察到的結果與原程式契約相符。</p>
+<p>若張量共享 storage，<code>x.add_()</code> 的影響可能透過另一個 view 被觀察到。
+因此不能單純把所有 inplace 換成 out-of-place 就宣布等價。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/compilation/remove_copy_pass.py">remove_copy_pass.py</a> 與
+<a href="tensorrt_llm/_torch/compilation/backend.py">Backend.optimize</a> 的 <code>remove_copy_for_mutates_args</code>。
+這是 checkout 中與 mutation/copy 優化相關的入口；不是宣稱它完整實作 PyTorch functionalization。</p>
+<p><strong>練習：</strong> 畫一個 tensor 與其 view，說明原地更新如何影響另一個參照。</p><div class="chapter-foot"><button data-bookmark="chapter-08">記住這一節</button><a href="#chapter-09">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-09"><summary><span class="num">09</span>第 06 集主題：Inductor IR 與中間值</summary><div class="chapter-body"><p><strong>問題：</strong> 圖裡的每個節點，是否都需要一份獨立的 GPU buffer？</p>
+<p>IR 是編譯器保存計算意義的中間表示。對逐元素組合，編譯器可以表達「輸出索引 i 的值怎樣由輸入算出」。
+如果相鄰運算適合融合，中間值可留在 kernel 內，不必都 materialize 成顯存張量。
+但 reduction、外部 library 呼叫、跨節點重用與 layout 要求，可能使 intermediate 仍需要實體 storage。</p>
+<p>FX graph、ATen graph、Inductor IR 與最後生成的 kernel code 處於不同層次，不能當成同一張圖。
+看 graph 節點數量也不能直接推算 kernel launch 次數。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/compilation/backend.py">backend.py</a> 第 183 行的 <code>compile_fx_inner</code>；
+<a href="tensorrt_llm/_torch/compilation/piecewise_optimizer.py">piecewise_optimizer.py</a> 的 <code>compile_fx</code>。
+它們是進入 Inductor 的接點；Inductor 本體在 PyTorch dependency，不在 TRT-LLM 這兩個檔案裡。</p>
+<p><strong>練習：</strong> 對同一段小函式分別列出 Python operations、概念圖節點與預期 kernel 邊界，最後查看 generated code 核對。</p><div class="chapter-foot"><button data-bookmark="chapter-09">記住這一節</button><a href="#chapter-10">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-10"><summary><span class="num">10</span>第 07 集主題：Compiler Scheduling 與融合限制</summary><div class="chapter-body"><p><strong>問題：</strong> 兩個相鄰算子，什麼時候能放進同一個 kernel？</p>
+<p>編譯器必須考慮 read/write dependencies、shape、layout、同步與成本。
+producer-consumer fusion 可能省 memory traffic；獨立運算也可能共享一次 launch。
+但多 consumer、reduction、register 使用量、外部算子邊界與不同 parallelization 可能阻止或降低融合收益。</p>
+<p>正確性先於效能：例如一個寫入會影響另一個讀取，改變順序就可能改變結果。
+「能融合」與「融合後更快」是不同判斷。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/compilation/patterns/residual_add_norm.py">patterns/residual_add_norm.py</a>
+及 <code>Backend.build_custom_passes</code>：自訂 pattern 把特定模式換成融合操作。
+這與 Inductor 自己的 scheduler 是相鄰層次，不能認為這個 pass manager 就是完整 Inductor scheduler。</p>
+<p><strong>練習：</strong> 找出 pattern 的匹配條件；推理為什麼 quantized 與非 quantized 路徑不能只改函式名稱。</p><div class="chapter-foot"><button data-bookmark="chapter-10">記住這一節</button><a href="#chapter-11">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-11"><summary><span class="num">11</span>第 08 集主題：Triton 的 Program 與 Block</summary><div class="chapter-body"><p><strong>問題：</strong> 怎麼用 Python 形式描述 GPU 上一批資料的運算？</p>
+<p>一個 Triton program 處理一個資料區塊，<code>program_id</code> 決定區塊位置，<code>arange</code> 建立區塊內的索引，mask 保護尾端。
+Triton 的邏輯元素區塊不是「一個元素對一個 CUDA thread」的固定映射；實際分配由編譯器與配置決定。
+<code>BLOCK=4096</code> 不代表一個 CUDA block 啟動 4096 threads。
+<a href="https://triton-lang.org/main/getting-started/tutorials/01-vector-add.html">Triton 官方入門</a>。</p>
+<p><strong>Repo：</strong> <code>_relu2_kernel</code> 使用 <code>tl.load</code> → fp32 計算 → cast → <code>tl.store</code>，有明確 NaN propagation。
+外層 <code>fused_relu2</code> 還檢查 output layout 與 partial overlap，這些屬於 operator correctness，不能只讀五行 kernel 就略過。</p>
+<p><strong>練習：</strong> 設 n=10、BLOCK=4，列出三個 programs 的索引與 mask。這是教學參數，不是 repo 的固定 launch 配置。</p><div class="chapter-foot"><button data-bookmark="chapter-11">記住這一節</button><a href="#chapter-12">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-12"><summary><span class="num">12</span>第 09 集主題：編譯快取不是一種快取</summary><div class="chapter-body"><p><strong>問題：</strong> 為什麼重啟 Python 後，有時仍要 warmup 或等待？</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>快取／狀態</th>
+<th>保存什麼</th>
+<th>能否直接取代其他層</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dynamo runtime variants</td>
+<td>compiled code 與 guards 等程序內狀態</td>
+<td>不能等同已 capture 的 CUDA Graph</td>
+</tr>
+<tr>
+<td>圖／codegen artifact cache</td>
+<td>適用於特定條件的編譯產物</td>
+<td>不保證所有 shape 與版本命中</td>
+</tr>
+<tr>
+<td>Triton / library JIT cache</td>
+<td>特定 specialization 的 kernel 產物</td>
+<td>不代表 serving resource 已配置</td>
+</tr>
+<tr>
+<td>Autotune cache</td>
+<td>工作負載下選出的 tactic／配置</td>
+<td>不代表所有 GPU 上都最佳</td>
+</tr>
+<tr>
+<td>CUDA Graph execution state</td>
+<td>captured graph、相關 storage 與執行狀態</td>
+<td>不等同一般磁碟 code cache</td>
+</tr>
+<tr>
+<td>KV / prefix cache</td>
+<td>request 的模型中間狀態</td>
+<td>與編譯快取用途不同</td>
+</tr>
+</tbody>
+</table></div>
+<p>是否跨程序保存、如何失效與 key 的內容，必須逐層看版本和實作。
+重啟後 artifact cache 命中，仍可能需要載入、配置、metadata preparation 或 capture。
+<a href="https://docs.pytorch.org/tutorials/recipes/torch_compile_caching_tutorial.html">PyTorch 編譯快取教學</a>。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/pyexecutor/sampler/ops/flashinfer.py">flashinfer sampling 的 prewarm</a> 第 381 行附近，將 lazy JIT 成本與正常呼叫區分。</p>
+<p><strong>練習：</strong> 將啟動、第一次請求、穩態請求分開計時；重啟程序再測，不以同一程序第二次呼叫代替 cold-start 實驗。</p><div class="chapter-foot"><button data-bookmark="chapter-12">記住這一節</button><a href="#chapter-13">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-13"><summary><span class="num">13</span>第 10 集主題：GEMM Templates 與 Autotune</summary><div class="chapter-body"><p><strong>問題：</strong> 矩陣乘法明明公式相同，為什麼有不同 kernel？</p>
+<p><code>C[M,N] = A[M,K] × B[K,N]</code> 的 M/N/K、dtype、layout、scales 與 GPU 會影響最佳 tile、pipeline 與實作。
+Autotune 在候選中量測或使用策略挑選，並付出搜尋、編譯、workspace 與記錄成本。
+它不是數學上保證全域最佳，也不一定每次 forward 重跑搜尋。</p>
+<p>Tensor Core 可加速支援格式的矩陣運算，但小 shape、低重用、layout 轉換或其他 overhead 仍可能主導。
+GEMM 的 arithmetic intensity 要把實際 bytes 與 reuse 算進去，不只看 FLOPs。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/modules/linear.py">linear.py</a> 第 585、662 行附近的 cuBLAS 分支，
+以及 <a href="tensorrt_llm/_torch/autotuner.py">autotuner.py</a>。這兩個入口不代表所有 Linear 都共用同一套 autotune。</p>
+<p><strong>練習：</strong> 為小 batch decode 與大 prefill 列出不同的 M，推理同一 tactic 為什麼可能不適用。</p><div class="chapter-foot"><button data-bookmark="chapter-13">記住這一節</button><a href="#chapter-14">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-14"><summary><span class="num">14</span>第 11 集主題：CUDA Graphs 省掉什麼</summary><div class="chapter-body"><p><strong>問題：</strong> 每輪 decode 重複提交很多小 GPU 工作，CPU 提交成本能否降低？</p>
+<p>Graph capture 記錄可重播的 GPU 工作與 dependencies；replay 降低 host 端逐項提交成本。
+GPU 仍要執行那些運算，不會因 replay 就免除 memory traffic 或把所有 kernel 變成一個。
+kernel fusion、Graph replay 與 overlap 分別處理不同成本，可以共存。</p>
+<p>普通 capture/replay 需要滿足對執行結構、storage 位址與操作相容性的要求。
+更新同一 storage 的資料值，與每次重新配置 tensor 並換掉 pointer，是不同操作。
+若修改 graph 參數或使用其他進階更新機制，必須有相應 API 與限制，不能假設一般 replay 會自動接受。
+<a href="https://docs.pytorch.org/docs/2.14/notes/cuda.html#cuda-graphs">PyTorch CUDA Graph 語意</a>。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/pyexecutor/cuda_graph_runner.py">CUDAGraphRunner.capture / replay</a> 第 686、789 行。
+<a href="tensorrt_llm/_torch/compilation/piecewise_optimizer.py">PiecewiseRunner.<strong>call</strong></a> 第 199 行會記錄 input addresses、warmup、capture，再 replay。</p>
+<p><strong>練習：</strong> 畫出「持久 input buffer → 寫入新資料 → replay」；標出哪個 owner 必須保證 storage 仍存活。這就接回 M01。</p><div class="chapter-foot"><button data-bookmark="chapter-14">記住這一節</button><a href="#chapter-15">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-15"><summary><span class="num">15</span>第 12 集主題：Triton、CUTLASS、cuBLAS、CuTe DSL</summary><div class="chapter-body"><p><strong>問題：</strong> 這些名字不是同一層的替代選項，該如何比較？</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>主要角色</th>
+<th>通常需要使用者決定什麼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CUDA C++</td>
+<td>通用 GPU programming</td>
+<td>threads、memory、同步、launch 與演算法</td>
+</tr>
+<tr>
+<td>Triton</td>
+<td>block/tensor-oriented GPU language 與 compiler</td>
+<td>區塊運算、layout/tiling、launch/autotune 配置</td>
+</tr>
+<tr>
+<td>cuBLAS / cuBLASLt</td>
+<td>可直接呼叫的線性代數 library</td>
+<td>dimensions、strides、types、workspace、algorithm 選項</td>
+</tr>
+<tr>
+<td>CUTLASS</td>
+<td>可組合的 CUDA templates 與 kernel building blocks</td>
+<td>tile、MMA、pipeline、epilogue 與硬體策略</td>
+</tr>
+<tr>
+<td>CuTe / CuTe DSL</td>
+<td>layout/tensor 抽象與 Python GPU kernel 開發工具</td>
+<td>資料到 threads 的配置、copy/MMA、同步與 pipeline</td>
+</tr>
+<tr>
+<td>FlashAttention</td>
+<td>attention 演算法家族及實作</td>
+<td>attention 語意與支援的 kernel 介面</td>
+</tr>
+<tr>
+<td>FlashInfer</td>
+<td>面向 inference 的 operator library</td>
+<td>attention metadata、layout、workspace 與實際 backend</td>
+</tr>
+</tbody>
+</table></div>
+<p>Triton 和 CuTe DSL 都能由 Python 形式撰寫 GPU 程式，但抽象、layout 表達與硬體控制方式不同。
+cuBLASLt 可以選演算法與 epilogue，CUTLASS/CuTe 可以用來組合更特定的實作；實際選擇看需求與量測。
+這些元件可在同一次 model forward 中同時出現。
+<a href="https://docs.nvidia.com/cuda/cublas/index.html">cuBLAS 官方文件</a>、<a href="https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/overview.html">CuTe DSL 官方概覽</a>。</p>
+<p><strong>Repo：</strong> <code>requirements.txt</code> 包含 FlashInfer、Triton 與 <code>nvidia-cutlass-dsl</code>；
+<a href="tensorrt_llm/_torch/cute_dsl_kernels/">cute_dsl_kernels</a> 與 <a href="cpp/tensorrt_llm/kernels/">CUDA kernels</a> 是不同實作入口。</p>
+<p><strong>練習：</strong> 解釋「PyTorch 模型 → custom op → FlashInfer → 某個 GPU kernel」的每一層責任；不要假設 FlashInfer 所有 kernel 都用 Triton 寫。</p><div class="chapter-foot"><button data-bookmark="chapter-15">記住這一節</button><a href="#chapter-16">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-16"><summary><span class="num">16</span>第 13 集主題：動態 Request 如何重用 Graph</summary><div class="chapter-body"><p><strong>問題：</strong> request 數量與 KV 長度一直變，怎樣重用較穩定的 GPU execution pattern？</p>
+<p>常見策略包括 capture 多個尺寸、以 bucket/padding 選擇、更新持久 metadata，或把不適合 capture 的部分留在 eager。
+例如教學 buckets <code>[1,2,4,8]</code> 中三筆 decode requests 可選四筆容量，第四筆是受控制的 padding。
+必須保證 dummy 資料、mask、KV 資源與輸出選取正確；不能把多算一筆當作無條件安全。</p>
+<p>batch size 相同仍可能有不同 KV 長度或 metadata；compiler 的符號 shape 支援也不自動保證同一份 CUDA Graph 可用。
+此段是通用策略與 TRT-LLM 接點，不是已驗證講者的 vLLM 範例或當前 vLLM 全部實作。</p>
+<p><strong>Repo：</strong> <a href="tensorrt_llm/_torch/pyexecutor/engine/cuda_graph.py">engine/cuda_graph.py</a> 與
+<a href="docs/source/features/torch_compile_and_piecewise_cuda_graph.md">piecewise 文件</a>。
+本 checkout 區分 generation-only graph 與 context/mixed 的 prefill graph，不能只看一份 capture list。</p>
+<p><strong>練習：</strong> 固定兩筆 requests，讓其中一筆 KV 從 31 變成 33 tokens；推理 page count、metadata、plan 與 Graph 哪些可能需要更新。</p><div class="chapter-foot"><button data-bookmark="chapter-16">記住這一節</button><a href="#chapter-17">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-17"><summary><span class="num">17</span>FlashInfer：它在 TRT-LLM 裡究竟做什麼</summary><div class="chapter-body"><p><strong>一句話：</strong> TRT-LLM 組織整個推論流程，FlashInfer 可提供其中某些高效 GPU operators。</p>
+<p>不是只有 attention。在本 checkout 可以直接看到：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>接點</th>
+<th>真實入口</th>
+<th>往上服務誰</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Attention metadata 與執行</td>
+<td><a href="tensorrt_llm/_torch/attention/backends/flashinfer.py">attention/backends/flashinfer.py</a></td>
+<td>attention 模組、model forward</td>
+</tr>
+<tr>
+<td>Activation、norm、RoPE wrapper</td>
+<td><a href="tensorrt_llm/_torch/custom_ops/flashinfer_custom_ops.py">custom_ops/flashinfer_custom_ops.py</a></td>
+<td>MLP、normalization、位置編碼與 compile</td>
+</tr>
+<tr>
+<td>Sampling</td>
+<td><a href="tensorrt_llm/_torch/pyexecutor/sampler/ops/flashinfer.py">sampler/ops/flashinfer.py</a></td>
+<td>logits/probs 處理與生成 token</td>
+</tr>
+<tr>
+<td>MoE kernel 適配</td>
+<td><a href="tensorrt_llm/_torch/moe/fused_moe/trtllm_gen/">fused_moe/trtllm_gen</a></td>
+<td>專家運算；具體支援看各檔與 backend</td>
+</tr>
+<tr>
+<td>可用性檢查</td>
+<td><a href="tensorrt_llm/_torch/flashinfer_utils.py">flashinfer_utils.py</a></td>
+<td>import、環境與功能接點</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>attn_backend</code> 選的是 attention backend 家族，不是整個模型所有算子的 library。
+本 checkout 的 <a href="tensorrt_llm/_torch/attention/ATTENTION_DEVELOPER_GUIDE.md">Attention Guide</a> 列出 <code>TRTLLM</code>、<code>VANILLA</code>、<code>FLASHINFER</code> base families。
+<code>TRTLLM</code> attention 路徑也有 <a href="tensorrt_llm/_torch/attention/backends/fmha/flashinfer_trtllm_gen.py">FlashInfer trtllm-gen 適配</a>。
+所以看到 <code>TRTLLM</code> 不足以推斷「完全沒有 FlashInfer」；要往下追實際 dispatch。</p>
+<p>同樣地，FlashInfer wrapper 內部的 <code>backend</code> 參數，與 TRT-LLM 的 <code>attn_backend</code> 不在同一層。
+目前檔案可見 <code>fa2</code>、<code>trtllm-gen</code> 等條件，但支援組合須看 GPU、dtype、head dim 與版本，不能任意互換。
+<a href="https://docs.flashinfer.ai/api/attention.html">FlashInfer Attention API</a>。</p><div class="chapter-foot"><button data-bookmark="chapter-17">記住這一節</button><a href="#chapter-18">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-18"><summary><span class="num">18</span>FlashInfer 的 Plan / Run 與 Paged KV</summary><div class="chapter-body"><p><strong>架構位置：</strong> request scheduler 已選好工作與 KV 資源，attention adapter 將它們轉成 kernel 能理解的 metadata。</p>
+<p><code>plan</code> 準備對應 workload 的執行安排與 metadata；<code>run</code> 使用 Q/KV 與相關資料計算 attention。
+Plan 不是分配整個 serving request 的 scheduler，也不是 Dynamo tracing，更不是 CUDA Graph capture。
+何時能重用 plan、何時需要刷新，取決於 backend、metadata、KV 長度和 Graph 模式。</p>
+<p><strong>可直接追的本地程式：</strong></p>
+<ol>
+<li><code>FlashInferAttentionMetadata</code>：第 309 行。</li>
+<li><code>prepare</code>：第 1620 行；檢查每 iteration 準備哪些資訊。</li>
+<li>prefill <code>plan</code>：第 2224 行；decode <code>plan</code>：第 2287 行。</li>
+<li><code>FlashInferAttention</code>：第 2329 行。</li>
+<li><code>forward_impl</code>：第 2617 行，再沿分支讀 <code>.run(...)</code>。</li>
+</ol>
+<p>這些行號來自本次 checkout 的 <a href="tensorrt_llm/_torch/attention/backends/flashinfer.py">flashinfer.py</a>；不是所有 request 都走同一段。</p>
+<h3>用兩個 Requests 手算一次</h3>
+<p>假設每頁 16 tokens，A 的有效 KV 長度為 38，B 為 9。以下是示意 page-list 格式，不是所有 TRT-LLM backend 的實體配置。</p>
+<pre><code class="language-text">request             A                 B
+logical pages       0, 1, 2           0
+physical page IDs   7, 2, 9           5
+indptr              [0, 3, 4]
+indices             [7, 2, 9, 5]
+last_page_len       [6, 9]
+length              2×16+6 = 38       0×16+9 = 9
+</code></pre>
+<p><code>indptr</code> 把扁平 page list 分給每筆 request；<code>indices</code> 指向實體頁；尾頁長度防止讀到無效位置。
+若每筆 query 長度為一，普通 decode 的 Q 可概念化為 <code>[2,Hq,D]</code>；prefill 則可能有 ragged query offsets。
+<code>Hq</code> 不一定等於 <code>Hkv</code>，GQA 的 mapping 必須正確。</p>
+<p>FlashInfer 文件的典型 combined paged KV 在 NHD 格式可寫成 <code>[pages,2,page_size,Hkv,D]</code>，
+但 tuple K/V、HND、量化與本地 allocator layout 都可能不同；先檢查 adapter 的 stride/layout 契約。
+<a href="https://docs.flashinfer.ai/tutorials/kv_layout.html">KV layout 官方說明</a>。</p>
+<p><strong>檢查：</strong> B 完成後把實體頁 5 分配給另一筆 request，哪些舊 metadata 與未完成 GPU work 必須先處理？</p><div class="chapter-foot"><button data-bookmark="chapter-18">記住這一節</button><a href="#chapter-19">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-19"><summary><span class="num">19</span>Custom Op 與 Fake Implementation：如何接上編譯器</summary><div class="chapter-body"><p><strong>問題：</strong> 外部高效 kernel 不能被 Python tracing 完整看穿，怎麼放進模型圖？</p>
+<p>Custom op 提供可辨識的 operator 邊界。Fake implementation 提供編譯期所需的輸出 metadata，
+不是偷偷在 CPU 上算一遍 attention，也不是「假結果可以拿來 sampling」。
+mutation schema、aliasing 與 output shape/dtype 必須和真實行為一致。</p>
+<p><strong>本地例子：</strong> <a href="tensorrt_llm/_torch/custom_ops/flashinfer_custom_ops.py">flashinfer_custom_ops.py</a> 第 16 行：</p>
+<pre><code class="language-python">@torch.library.custom_op(&quot;trtllm::flashinfer_silu_and_mul&quot;, mutates_args=())
+def flashinfer_silu_and_mul(x: torch.Tensor) -&gt; torch.Tensor:
+    return silu_and_mul(x, enable_pdl=get_env_enable_pdl())
+</code></pre>
+<p>其 <code>register_fake</code> 回傳對應一半最後維度的 metadata。這反映 gated activation 的輸出契約，不能直接套到任意算子。
+<code>flashinfer_fused_add_rmsnorm</code> 則宣告修改 <code>input</code> 與 <code>residual</code>，與無 mutation 的 activation 不同。</p>
+<p>Opaque custom op 可讓 compiler 保留這個節點，但一般不能任意跨越邊界分析或融合其內部。
+因此可搭配 pattern pass，或由 library 直接提供 fused operator。
+<a href="https://docs.pytorch.org/tutorials/advanced/custom_ops_landing_page.html">PyTorch Custom Operators</a>。</p>
+<p><strong>檢查：</strong> 如果 fake implementation 的輸出 shape 正確，但 mutation 宣告錯誤，為什麼程式仍可能算錯？</p><div class="chapter-foot"><button data-bookmark="chapter-19">記住這一節</button><a href="#chapter-20">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-20"><summary><span class="num">20</span>Piecewise CUDA Graph：編譯與 Library 的接縫</summary><div class="chapter-body"><p><strong>問題：</strong> 模型大部分可重播，但某些 attention planning 或 metadata 行為需要每輪處理，怎麼辦？</p>
+<p>Piecewise 思路是保留需要 runtime 處理的邊界，將相容區段 capture/replay。
+在本 checkout 的實作中，<code>_piecewise_boundary_ops</code> 列出 attention、MLA、GDN、Mamba 等可選 custom op 邊界。
+不能推論「所有 attention 永遠不可 capture」，因為普通 generation graphs 與其他 backends 可能支援不同方式。</p>
+<p>本地概念路徑：</p>
+<pre><code class="language-text">torch.compile → TRT-LLM Backend → AOT 圖整理與 patterns
+              → 依 boundary ops 切段
+              → supported segment: compile / warmup / capture / replay
+              → excluded boundary: 對應 eager/custom op callable
+</code></pre>
+<p><a href="tensorrt_llm/_torch/compilation/piecewise_optimizer.py">PiecewiseInterpreter / PiecewiseRunner</a> 會維護 entries、capture 狀態與 storage 位址。
+<code>PiecewiseRunner.__call__</code> 不符合 entry 或 flags 時會走 <code>default_callable</code>，不是無條件 replay。</p>
+<p>本 checkout 文件也有不透過 torch.compile 的實驗性 <code>breakable</code> prefill graph 路徑。
+它與 piecewise 是不同選項，支援限制要查文件，不能把「不用 compile」說成「不用 Graph」。
+<a href="docs/source/features/torch_compile_and_piecewise_cuda_graph.md">本地 compile / prefill graph 文件</a>。</p>
+<p><strong>檢查：</strong> Symbolic shape 已能處理多種 token 數，為何還會維護多份 captured graph entries？</p><div class="chapter-foot"><button data-bookmark="chapter-20">記住這一節</button><a href="#chapter-21">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-21"><summary><span class="num">21</span>把資源生命週期接回 M01</summary><div class="chapter-body"><p>上面每個效能技巧都依賴正確的資源管理：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>資源</th>
+<th>至少要問的 lifetime 問題</th>
+<th>讀 code 的方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input / output tensors</td>
+<td>replay 時 storage 是否仍存在、位址是否符合要求</td>
+<td>graph runner、持久 buffers</td>
+</tr>
+<tr>
+<td>Workspace</td>
+<td>是否被另一個 concurrent op 提早重用</td>
+<td>FlashInfer wrappers、metadata、stream dependencies</td>
+</tr>
+<tr>
+<td>KV pages</td>
+<td>request 結束時是否仍有 GPU work 讀寫</td>
+<td>KV manager、request completion、events</td>
+</tr>
+<tr>
+<td>CUDA stream</td>
+<td>使用它的 manager／allocator 是否仍需要它</td>
+<td>BufferManager、CudaStream、allocator ownership</td>
+</tr>
+<tr>
+<td>Compiled callable / graph</td>
+<td>捕獲資源由誰保有，reset 時如何處理</td>
+<td>Backend、PiecewiseRunner、graph pools</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>unique_ptr</code> / <code>shared_ptr</code> 描述 C++ object ownership；stream/event 描述 GPU work 的 ordering 與 completion。
+兩者都重要：一個 C++ object 被保住，不等於跨 streams 自動同步；host object 被析構，也不等於之前 GPU 工作都已完成。</p>
+<p><strong>M01 接續題仍只有一題：</strong> 兩個 <code>BufferManager</code> 共用 stream、各有 buffers，為什麼 stream 可能用 <code>shared_ptr</code>，回傳 buffer 可以用 <code>unique_ptr</code>？
+這份教材沒有替你回答或勾選進度。</p><div class="chapter-foot"><button data-bookmark="chapter-21">記住這一節</button><a href="#chapter-22">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-22"><summary><span class="num">22</span>怎樣驗證整套優化有效</summary><div class="chapter-body"><h3>先確認 Correctness</h3>
+<p>在相同模型、weights、tokenization 與 sampling 設定下比較；operator 級則固定 shape、dtype、layout 與語意。
+處理尾端、空輸入支援範圍、極端值、NaN、aliasing、mutation 與 page boundary。
+Sampling 含隨機性，不能只用一次 token 完全相同作為所有分布正確性的證據。</p>
+<h3>再把時間分層</h3>
+<pre><code class="language-text">啟動：load + allocation + JIT/compile + autotune + capture + warmup
+TTFT：queue + 輸入處理 + admission + prefill + first sampling/response
+後續 token：scheduling + metadata + forward + sampling + 必要等待與交付
+</code></pre>
+<p>這是成本分類，非在 overlap 系統裡可直接相加的時間等式；量測邊界與重疊區域要在 profiler 裡確認。
+比較 host wall time、CUDA events 與 serving latency，先說清楚各量到哪一段。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>優先查看</th>
+<th>可能動手的層</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python 重啟後第一筆很慢</td>
+<td>load、JIT、cache miss、capture、warmup</td>
+<td>initialization / compile cache</td>
+</tr>
+<tr>
+<td>shape 變化時延遲尖峰</td>
+<td>guards、recompiles、graph entry/fallback</td>
+<td>Dynamo / graph selection</td>
+</tr>
+<tr>
+<td>GPU 兩次工作間有空白</td>
+<td>CPU scheduler、metadata、launch、同步</td>
+<td>runtime / planning / Graph</td>
+</tr>
+<tr>
+<td>大量 intermediate traffic</td>
+<td>generated code、fusion boundaries</td>
+<td>compiler / fused custom ops</td>
+</tr>
+<tr>
+<td>attention 隨 KV 變長而變慢</td>
+<td>page layout、bytes、plan、kernel、batch</td>
+<td>KV / FlashInfer / attention</td>
+</tr>
+<tr>
+<td>kernel 快了端到端沒變</td>
+<td>佔比、queueing、其他 stage 與額外成本</td>
+<td>全流程</td>
+</tr>
+</tbody>
+</table></div>
+<p>可用 <code>TORCH_LOGS=graph_breaks,recompiles,guards</code> 先查編譯問題，需看 generated code 時再加 <code>output_code</code>。
+這些開關可能產生大量 logs，應用於小 lab；欄位以安裝版本支援為準。
+<a href="https://docs.pytorch.org/docs/main/user_guide/torch_compiler/compile/programming_model.observability.html">PyTorch observability</a>、
+<a href="docs/source/developer-guide/perf-analysis.md">本 repo Performance Analysis</a>。</p>
+<p>本文件的圖、traffic 推導與 buckets 都是教學材料。<strong>尚未在本機執行模型或 GPU 效能實驗，沒有 speedup 結論。</strong></p><div class="chapter-foot"><button data-bookmark="chapter-22">記住這一節</button><a href="#chapter-23">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-23"><summary><span class="num">23</span>醒來後如何開始：三次短課</summary><div class="chapter-body"><p><strong>第一課：把 Request 放上架構圖。</strong> 讀 01～03，用自己的話指出 serving、compiler、kernel 三層。一次只回答一個定位問題。</p>
+<p><strong>第二課：接續 M01。</strong> 打開 <code>bufferManager.h</code> 的 aliases 與 constructor，回答目前待答的 ownership 題；再追一次具體資源建立與保存。</p>
+<p><strong>第三課：做一個小的融合例子。</strong> 讀 04 與 11，自己列出 ReLU² 的 traffic 與索引。之後在獨立 lab 驗證，再比較 eager/compiled/手寫 kernel。</p>
+<p>後續依序接 guards → custom op/fake → FlashInfer plan/run → CUDA Graph/piecewise，
+每次在上層 request 流程中標出目前正在理解哪個接縫。
+唯一完成清單仍在課程地圖，閱讀此處不自動代表 M00/M01/M08/M09 完成。</p><div class="chapter-foot"><button data-bookmark="chapter-23">記住這一節</button><a href="#chapter-24">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-24"><summary><span class="num">24</span>帶著問題讀 Repo</summary><div class="chapter-body"><p>以下是各節複習題的索引，互動帶讀時一次只選一題，不同時全部要求回答。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>複習題</th>
+<th>應回到的節次</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>torch.compile 與 CUDA Graph 分別省哪一段成本？</td>
+<td>03、14、20</td>
+</tr>
+<tr>
+<td>FlashInfer 在哪裡接到 request 的 KV pages？</td>
+<td>17、18</td>
+</tr>
+<tr>
+<td>假如 attention 用 FlashInfer，MLP 還能用 cuBLAS 或 Triton 嗎？</td>
+<td>01、15、17</td>
+</tr>
+<tr>
+<td>fake op 知道 shape，為什麼不等於它算出了 logits？</td>
+<td>05、19</td>
+</tr>
+<tr>
+<td>同一 batch size，KV 長度改變時還要檢查什麼？</td>
+<td>16、18、20</td>
+</tr>
+<tr>
+<td>compiled code cache 命中，為什麼仍可能重新 capture？</td>
+<td>12、14</td>
+</tr>
+<tr>
+<td>為何一個 Graph 裡可以包含多個 library kernels？</td>
+<td>14、15</td>
+</tr>
+<tr>
+<td>怎樣證明你找對了實際 dispatch，而非只讀到候選 class？</td>
+<td>02、17、18</td>
+</tr>
+<tr>
+<td>如何從 buffer ownership 一路解釋 Graph replay correctness？</td>
+<td>14、20、21</td>
+</tr>
+</tbody>
+</table></div><div class="chapter-foot"><button data-bookmark="chapter-24">記住這一節</button><a href="#chapter-25">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-25"><summary><span class="num">25</span>本地原始碼導航</summary><div class="chapter-body"><p>行號為 2026-10-27 當次 checkout 的查閱結果；更新後以 symbol 搜尋為準。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>檔案</th>
+<th>Symbol / 查閱位置</th>
+<th>要核對的事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="tensorrt_llm/_torch/pyexecutor/model_engine.py">model_engine.py</a></td>
+<td>compile 設定 434；<code>Backend</code> 建構 490；<code>torch.compile</code> 511 附近</td>
+<td>選定模型的 compile 路徑與分支</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/compilation/backend.py">backend.py</a></td>
+<td><code>Backend</code> 43；<code>__call__</code> 187；<code>aot_module_simplified</code> 222</td>
+<td>自訂 backend 到 AOT/Inductor</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/compilation/piecewise_optimizer.py">piecewise_optimizer.py</a></td>
+<td>boundaries 26；<code>PiecewiseRunner</code> 148；<code>__call__</code> 199</td>
+<td>切段、warmup、capture、fallback/replay</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/attention/backends/flashinfer.py">flashinfer.py</a></td>
+<td>metadata 309；prepare 1620；plan 2224/2287；backend class 2329</td>
+<td>page metadata 到 attention run</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/custom_ops/flashinfer_custom_ops.py">flashinfer_custom_ops.py</a></td>
+<td>activation custom op 16 與 fake registration</td>
+<td>真實算子與 tracing metadata</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/pyexecutor/sampler/ops/flashinfer.py">sampler FlashInfer ops</a></td>
+<td>top-k/top-p 105 附近；prewarm 381 附近</td>
+<td>attention 之外的 FlashInfer 使用</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/pyexecutor/cuda_graph_runner.py">cuda_graph_runner.py</a></td>
+<td><code>CUDAGraphRunner</code> 156；capture 686；replay 789</td>
+<td>普通 generation graph 管理</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/fused_relu2_triton.py">fused_relu2_triton.py</a></td>
+<td>kernel 26；wrapper 46</td>
+<td>手寫融合、layout、aliasing</td>
+</tr>
+<tr>
+<td><a href="tensorrt_llm/_torch/modules/linear.py">linear.py</a></td>
+<td>cuBLAS 路徑 585、662 附近</td>
+<td>模型 Linear 與 library dispatch</td>
+</tr>
+<tr>
+<td><a href="cpp/include/tensorrt_llm/runtime/bufferManager.h">bufferManager.h</a></td>
+<td>aliases 43；constructor 54</td>
+<td>ownership 與 GPU 資源管理</td>
+</tr>
+</tbody>
+</table></div>
+<p>再往外部 library 追時，記下 package version、實際函式與 backend；不能只用最新 main 的實作推定這份 checkout 的行為。</p><div class="chapter-foot"><button data-bookmark="chapter-25">記住這一節</button><a href="#chapter-26">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-26"><summary><span class="num">26</span>FlashAttention、PagedAttention 與 FlashInfer 的關係</summary><div class="chapter-body"><p><strong>先回到公式：</strong> 對一個 query head，attention 是 <code>softmax(QKᵀ / sqrt(D) + mask) V</code>。
+Q 的 query 長度和 K/V 的歷史長度可不同；GQA 還涉及 query heads 到 KV heads 的對應。</p>
+<h3>FlashAttention：改變資料搬運與計算安排</h3>
+<p>直接實作可能保存整份 query×key score/probability 矩陣。
+FlashAttention 以 tiles 計算，配合 online softmax 維護局部統計與輸出，減少顯存往返與大型中間矩陣。
+它仍依 exact attention 語意處理資料；dense prefill 的主要計算複雜度不會因此從二次自動變線性。
+浮點運算順序不同，結果不保證 bitwise 一致。
+<a href="https://arxiv.org/abs/2205.14135">FlashAttention 原始論文</a>。</p>
+<p>單一 query row 的教學遞迴如下。新 tile 的 scores 已包含 scaling/mask，舊狀態為 max <code>m</code>、分母 <code>l</code>、未正規化向量 <code>o</code>：</p>
+<pre><code class="language-text">m_new = max(m, max(scores_tile))
+alpha = exp(m - m_new)
+p     = exp(scores_tile - m_new)
+l_new = alpha * l + sum(p)
+o_new = alpha * o + p @ V_tile
+最後 output = o / l
+</code></pre>
+<p>這不是完整 kernel：還要處理初始值、完全 masked rows、GQA、並行歸約、dtype 與記憶體配置。
+重點是：改變目前 max 時，用同一比例重縮舊累積值，因此不需要保留所有舊 scores。</p>
+<h3>PagedAttention：改變 KV 的配置與尋址</h3>
+<p>KV 以 blocks/pages 管理，透過邏輯到實體映射存取；可降低配置碎片並支援相應的 reuse 策略。
+它不會讓有效 KV tokens 的元素數憑空變少，也不等於 attention softmax 被近似。
+對應 <a href="docs/source/features/kvcache.md">本 repo KV cache 文件</a> 與第 18 節的 page list。</p>
+<h3>FlashInfer：提供與整合這些需求相關的 Operators</h3>
+<p>Library 必須把不同 KV layout、變動長度、query 形狀與 GPU 特性轉成可執行的計畫。
+這就是第 18 節的 metadata、plan/run 與不同 backend 存在的原因。
+FlashInfer 論文討論 KV 格式、JIT 客製化與動態負載下的排程及 Graph 相容性；
+paper 數據不當作目前本機或 TRT-LLM 版本的 benchmark。
+<a href="https://arxiv.org/abs/2501.01005">FlashInfer 論文</a>。</p>
+<p><strong>檢查：</strong> 可以同時使用 paged KV 與 IO-aware tiled attention 嗎？它們各改變什麼？</p><div class="chapter-foot"><button data-bookmark="chapter-26">記住這一節</button><a href="#chapter-27">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-27"><summary><span class="num">27</span>把兩個 Requests 從 Prefill 追到第一輪 Decode</summary><div class="chapter-body"><p>這是手算模型，不是某個已執行的 checkpoint：32 layers、Hq=32、Hkv=8、D=128、KV 為 BF16，
+單 GPU、無 prefix sharing、無特殊壓縮或輔助 cache。A prompt 38 tokens，B prompt 9 tokens，每頁 16 tokens。</p>
+<h3>Prefill：一次處理已知的 Prompt</h3>
+<p>以 packed tokens 表示時，本輪共 47 個 query tokens。隱藏維度示意為 4096，
+Q 可視為 <code>[47,32,128]</code>，新 K/V 各為 <code>[47,8,128]</code>；具體 forward 輸入與 layout 要核對模型。
+A 和 B 各自套用正確的 causal 邊界，不能把 packed storage 當作一條 47-token 序列互相注意。</p>
+<p>每 layer 的有效 KV bytes：</p>
+<pre><code class="language-text">2 × 47 × 8 × 128 × 2 = 192,512 bytes = 188 KiB
+</code></pre>
+<p>頁數為 A 三頁、B 一頁；若以完整四頁保留空間，則每 layer 是：</p>
+<pre><code class="language-text">2 × (4 × 16) × 8 × 128 × 2 = 262,144 bytes = 256 KiB
+32 layers 合計 8 MiB
+</code></pre>
+<p>未包含 metadata、workspace、allocator 預留與其他模型資源；與「有效 KV 元素數」分開計算。</p>
+<h3>First Sampling：預測第一個新 Token</h3>
+<p>普通生成可從各 request 最後有效 prompt 位置的 logits 產生第一個新 token。
+這時 KV cache 包含 prompt；<strong>剛 sample 出的新 token 還沒有因為 sampling 自動生成 K/V</strong>。
+產生 token 的數學操作，與對該 token 執行下一次 model forward，是不同步驟。</p>
+<h3>Decode：把剛生成的 Token 當下一輪輸入</h3>
+<p>假設兩筆都沒結束，下一輪各輸入一個 token，Q 共兩列。
+本次 forward 為這兩個新輸入產生 K/V；各 request 的有效 KV 長度由 38/9 增至 39/10，
+attention 讀取各自歷史並產生下一個位置的 logits，再做 sampling。
+具體 cache write 與 attention kernel 的融合方式、執行順序由 backend 決定。</p>
+<p>普通單 token decode 的 attention 會讀歷史 KV；整個模型仍包含 projection、MLP 等運算。
+小 batch 時 weights/KV traffic 或 launch overhead 常重要，但大 batch、長 context、量化與不同硬體可改變瓶頸。
+不能把「decode 常 memory-bound」當作所有 kernel 的固定結論。</p>
+<h3>完成、取消與 Reuse</h3>
+<p>若 B sample 到 EOS 或符合停止條件，它不再需要為該完成狀態執行下一輪普通 decode。
+runtime 要處理 pending GPU work、回應狀態與 KV 釋放／reuse 政策。
+釋放邏輯 ownership 不能造成仍在使用的實體頁被過早分配給新 request。</p>
+<p><strong>檢查：</strong> 第一個新 token 已經回應給使用者，為什麼它的 K/V 可能尚未在 cache 裡？</p><div class="chapter-foot"><button data-bookmark="chapter-27">記住這一節</button><a href="#chapter-28">下一節 →</a></div></div></details>
+<details class="chapter" id="chapter-28"><summary><span class="num">28</span>擴展到多 GPU：哪幾層開始改變</summary><div class="chapter-body"><p>先保持前面的 request 主線，再加入以下變化；不要一次把所有平行方式當作同一種切模型。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>主要切分對象</th>
+<th>往端到端流程增加的問題</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tensor Parallelism（TP）</td>
+<td>一層內的 tensor／計算</td>
+<td>head/weight 分片、collectives、KV 分布、通訊與算子的融合</td>
+</tr>
+<tr>
+<td>Pipeline Parallelism（PP）</td>
+<td>模型 layers / stages</td>
+<td>activation 傳遞、microbatches、stage scheduling 與空泡</td>
+</tr>
+<tr>
+<td>Expert Parallelism（EP）</td>
+<td>MoE experts</td>
+<td>token routing、dispatch/combine、負載與通訊</td>
+</tr>
+<tr>
+<td>Prefill/Decode 分離</td>
+<td>request 的不同執行階段</td>
+<td>KV transfer、交接狀態、排隊與不同 GPU 資源配置</td>
+</tr>
+</tbody>
+</table></div>
+<p>NCCL 提供 GPU 通訊 primitives；NIXL 在本 repo 的 disaggregated serving 可參與 KV transfer。
+這些元件不代替 tokenizer、model 或 FlashInfer attention operator；它們提供不同的系統能力。
+通訊本身可能涉及 kernel、stream、workspace 與 capture 相容性，因此也要接回 M01/M06。</p>
+<p>閱讀順序：<a href="docs/source/features/parallel-strategy.md">parallel strategy</a> →
+<a href="tensorrt_llm/_torch/moe/fused_moe/MOE_DEVELOPER_GUIDE.md">MoE guide</a> →
+<a href="docs/source/features/disagg-serving.md">disaggregated serving</a>。
+在選定配置下追一次實際 communicator 與 cache transceiver，再量測 compute / communication / overlap。</p>
+<p><strong>檢查：</strong> attention kernel 快 20%，如果 request 主要卡在 KV transfer，端到端延遲會自動快 20% 嗎？</p><div class="chapter-foot"><button data-bookmark="chapter-28">記住這一節</button></div></div></details></div><p id="empty" class="empty">找不到符合的章節。可以試試 KV、Graph、FlashInfer 或 ownership。</p>
+<details class="panel source-ledger" id="source-ledger"><summary>來源核對紀錄 · 13 集影片清單</summary><!--
+SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<h1>Bilibili 合集來源紀錄：torch 編譯器</h1>
+<p>查閱日期：2026-10-27。作者：Cishoon（mid <code>106695488</code>）；season <code>9198587</code>。
+<a href="https://space.bilibili.com/106695488/lists/9198587?type=season">原始合集</a>。
+當次清單共 13 集，合計 3 小時 29 分 16 秒。這是 metadata 快照，非觀看紀錄。</p>
+<h2>取得方式與限制</h2>
+<ul>
+<li>公開合集 API 回傳成功，可核對作者、合集簡介、影片標題、BV ID 與片長。</li>
+<li><a href="https://api.bilibili.com/x/space/fav/season/list?season_id=9198587&amp;pn=1&amp;ps=100">合集清單 API</a>。</li>
+<li><a href="https://api.bilibili.com/x/polymer/web-space/seasons_archives_list?mid=106695488&amp;season_id=9198587&amp;sort_reverse=false&amp;page_num=1&amp;page_size=100">交叉核對 API</a>。</li>
+<li>合集網頁顯示驗證頁；影片網頁及 view API 回傳 HTTP 412。</li>
+<li>第 08 集兩個 API 的標題有差異：一個為「Triton 與塊」的長標題，一個為「Triton 與 Codegen」。以下採收藏清單 API 的標題，BV ID 相同。</li>
+<li>未取得可讀逐字稿，未聽看全部影片；不聲稱完整還原講者案例、時間點或結論。字幕取得狀態見文末。</li>
+<li><a href="compiler-and-flashinfer-e2e.md">端到端學習筆記</a> 是依本清單主題、官方文件與本地程式碼寫成的原創解說，與影片原話分開。</li>
+</ul>
+<h2>當次影片清單</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>集數</th>
+<th>原始標題</th>
+<th>片長</th>
+<th>影片</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01</td>
+<td>【torch编译器】01.算子融合：GPU做加法时，99%的时间在摸鱼</td>
+<td>15:08</td>
+<td><a href="https://www.bilibili.com/video/BV149h16QE7p/">BV149h16QE7p</a></td>
+</tr>
+<tr>
+<td>02</td>
+<td>【torch编译器】02.Dynamo抓图：把f跑了一遍，172亿次乘法一次没算</td>
+<td>13:08</td>
+<td><a href="https://www.bilibili.com/video/BV1n5hD69EW6/">BV1n5hD69EW6</a></td>
+</tr>
+<tr>
+<td>03</td>
+<td>【torch编译器】03.guard守卫：换了10种形状，只编译了2次</td>
+<td>13:43</td>
+<td><a href="https://www.bilibili.com/video/BV158a46JEBs/">BV158a46JEBs</a></td>
+</tr>
+<tr>
+<td>04</td>
+<td>【torch编译器】04.AOTAutograd：训练时，编译器提前把反向传播也编译好，并决定前向要给反向留下什么</td>
+<td>13:49</td>
+<td><a href="https://www.bilibili.com/video/BV1J8aY6CE7Q/">BV1J8aY6CE7Q</a></td>
+</tr>
+<tr>
+<td>05</td>
+<td>【torch编译器】05.分解与函数化：PyTorch 的三千多个算子，编译器先拆成少数基础算子、去掉原地修改，不用一个个支持</td>
+<td>13:38</td>
+<td><a href="https://www.bilibili.com/video/BV1oSaE6YE6z/">BV1oSaE6YE6z</a></td>
+</tr>
+<tr>
+<td>06</td>
+<td>【torch编译器】06.Inductor IR：编译器用一个函数写下输出的每个数怎么算，相邻的运算直接套进去，中间结果连显存都不用分配</td>
+<td>14:32</td>
+<td><a href="https://www.bilibili.com/video/BV13HaX6DE2K/">BV13HaX6DE2K</a></td>
+</tr>
+<tr>
+<td>07</td>
+<td>【torch编译器】07.调度器与融合：编译器先弄清每个运算读写哪些数据，再把能一起算的放进同一个 kernel</td>
+<td>21:48</td>
+<td><a href="https://www.bilibili.com/video/BV1P5aB6FENB/">BV1P5aB6FENB</a></td>
+</tr>
+<tr>
+<td>08</td>
+<td>【torch编译器】08.Triton 与块：编译器把合并好的运算写成一段 GPU 程序，同时启动几千份，每份一次处理一整批数</td>
+<td>15:51</td>
+<td><a href="https://www.bilibili.com/video/BV1Nnay6JEbs/">BV1Nnay6JEbs</a></td>
+</tr>
+<tr>
+<td>09</td>
+<td>【torch编译器】09.编译缓存：编译好的模型，重启Python还要再编译吗？</td>
+<td>12:56</td>
+<td><a href="https://www.bilibili.com/video/BV1C5Hh6SE1A/">BV1C5Hh6SE1A</a></td>
+</tr>
+<tr>
+<td>10</td>
+<td>【torch编译器】10.矩阵乘模板与autotune：max-autotune 编译那么久，在做什么？</td>
+<td>12:28</td>
+<td><a href="https://www.bilibili.com/video/BV1gRHq62EK8/">BV1gRHq62EK8</a></td>
+</tr>
+<tr>
+<td>11</td>
+<td>【torch编译器】11.CUDA Graphs：启动kernel的时间，能省掉吗？</td>
+<td>10:40</td>
+<td><a href="https://www.bilibili.com/video/BV115Hd6dEkb/">BV115Hd6dEkb</a></td>
+</tr>
+<tr>
+<td>12</td>
+<td>【torch编译器】12. Triton、CUTLASS、cuBLAS、CuTe DSL...都是什么？</td>
+<td>39:13</td>
+<td><a href="https://www.bilibili.com/video/BV1w7p56qES3/">BV1w7p56qES3</a></td>
+</tr>
+<tr>
+<td>13</td>
+<td>【torch编译器】13.vLLM：请求数一直在变，CUDA Graphs 还怎么用？</td>
+<td>12:22</td>
+<td><a href="https://www.bilibili.com/video/BV1WTJ26XEoB/">BV1WTJ26XEoB</a></td>
+</tr>
+</tbody>
+</table></div>
+<h2>內容歸屬規則</h2>
+<ol>
+<li>上表只能證明各影片標示的主題，不能證明講者用了哪些範例或逐步論證。</li>
+<li>「99% 時間」「只編譯 2 次」等標題文字，不當作普遍效能數據或本機測試結果。</li>
+<li>FlashInfer 是學習者要求補充的內容；不能根據合集標題斷言第 12 集已講到它。</li>
+<li>若之後取得字幕或講者講義，再補「影片原文位置 → 筆記段落 → repo 接點」；不覆蓋原有來源區別。</li>
+</ol>
+<h2>匿名字幕查詢結果</h2>
+<p>另以每支影片的公開 pagelist API 取得 cid，再呼叫 player API。13 集 player API 均回傳 <code>code=0</code>，但 <code>subtitle.subtitles=[]</code>。</p>
+<p>因此只知道本次匿名查詢沒有可取得的字幕清單；不能宣稱影片本身無字幕。行動版頁面也未提供可讀逐字內容。</p></details>
+<footer class="footer">教材內容來源：<a href="compiler-and-flashinfer-e2e.md">Markdown 筆記</a> · <a href="interview-preparation.md">完整課程地圖</a> · <a href="learning-progress.md">學習紀錄</a><br>HTML 為閱讀衍生版本。書籤只記閱讀位置，不會標記課程完成。無外部字型、CDN 或追蹤程式。</footer>
+</main></div>
+<script>
+'use strict';
+const chapters = [...document.querySelectorAll('.chapter')];
+const search = document.getElementById('search');
+const single = document.getElementById('single');
+const status = document.getElementById('status');
+let activeChapter = 'chapter-00';
+function focusChapter(id, scroll = true) {
+  const target = document.getElementById(id);
+  if (!target) return;
+  if (search.value) { search.value = ''; filterChapters(); }
+  if (single.checked) chapters.forEach(ch => { if (ch !== target) ch.open = false; });
+  if (target.tagName === 'DETAILS') target.open = true;
+  activeChapter = id;
+  document.querySelectorAll('.sidebar nav a').forEach(a => {
+    const current = a.getAttribute('href') === '#' + id;
+    a.classList.toggle('active', current);
+    if (current) a.setAttribute('aria-current', 'location'); else a.removeAttribute('aria-current');
+  });
+  if (scroll) target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.addEventListener('click', event => {
+  const link = event.target.closest('a[href^="#"]');
+  if (!link) return;
+  const id = link.getAttribute('href').slice(1);
+  if (id.startsWith('chapter-') || id === 'source-ledger') {
+    event.preventDefault();
+    focusChapter(id);
+    history.replaceState(null, '', '#' + id);
+  }
+});
+chapters.forEach(chapter => {
+  chapter.addEventListener('toggle', () => {
+    if (printState) return;
+    if (chapter.open) {
+      activeChapter = chapter.id;
+      if (single.checked && !search.value) chapters.forEach(other => { if (other !== chapter) other.open = false; });
+    }
+  });
+});
+function filterChapters() {
+  const query = search.value.trim().toLocaleLowerCase();
+  let count = 0;
+  chapters.forEach(ch => {
+    const matches = !query || ch.textContent.toLocaleLowerCase().includes(query);
+    ch.hidden = !matches;
+    if (matches) count++;
+    if (query) ch.open = matches;
+    else if (single.checked) ch.open = ch.id === activeChapter;
+  });
+  document.getElementById('empty').style.display = count ? 'none' : 'block';
+  status.textContent = query ? `找到 ${count} 個章節。搜尋只篩選章節，不改變學習驗收。` : '選一節閱讀；回答與練習紀錄以 learning-progress.md 為準。';
+}
+search.addEventListener('input', filterChapters);
+single.addEventListener('change', () => {
+  if (search.value) filterChapters();
+  else chapters.forEach(ch => ch.open = !single.checked || ch.id === activeChapter);
+});
+document.querySelectorAll('[data-bookmark]').forEach(button => button.addEventListener('click', () => {
+  try {
+    localStorage.setItem('trtllm-study-bookmark-v1', button.dataset.bookmark);
+    status.textContent = '已記住閱讀位置；這不代表完成課程驗收。';
+  } catch (error) {
+    if (error.name !== 'SecurityError' && error.name !== 'QuotaExceededError') throw error;
+    status.textContent = '瀏覽器無法保存書籤；可記下網址中的章節標記。';
+  }
+}));
+document.getElementById('resume').addEventListener('click', () => {
+  try {
+    const bookmark = localStorage.getItem('trtllm-study-bookmark-v1');
+    if (bookmark && document.getElementById(bookmark)) focusChapter(bookmark);
+    else status.textContent = '尚未儲存書籤。可用每節底部的「記住這一節」。';
+  } catch (error) {
+    if (error.name !== 'SecurityError') throw error;
+    status.textContent = '此瀏覽器不允許儲存書籤，可直接使用章節目錄。';
+  }
+});
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+function selectTab(button) {
+  tabs.forEach(tab => {
+    const selected = tab === button;
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    document.getElementById(tab.getAttribute('aria-controls')).hidden = !selected;
+  });
+}
+tabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectTab(tab));
+  tab.addEventListener('keydown', event => {
+    let next;
+    if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') next = (index + tabs.length - 1) % tabs.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = tabs.length - 1;
+    if (next !== undefined) { event.preventDefault(); selectTab(tabs[next]); tabs[next].focus(); }
+  });
+});
+function updateKV() {
+  const tokens = Number(document.getElementById('kv-length').value);
+  const count = Math.ceil(tokens / 16);
+  const tail = (tokens - 1) % 16 + 1;
+  const ids = [7, 2, 9, 12].slice(0, count);
+  document.getElementById('kv-value').textContent = tokens + ' tokens';
+  const pages = document.getElementById('kv-pages');
+  pages.replaceChildren();
+  ids.forEach((id, index) => {
+    const used = index === count - 1 ? tail : 16;
+    const page = document.createElement('div');
+    page.className = 'page';
+    page.innerHTML = `<span>實體頁</span><strong>${id}</strong><span>${used} / 16</span><div class="fill"><i style="width:${used / 16 * 100}%"></i></div>`;
+    pages.append(page);
+  });
+  document.getElementById('kv-result').textContent = `indptr = [0, ${count}, ${count + 1}]\nindices = [${[...ids, 5].join(', ')}]\nlast_page_len = [${tail}, 9]`;
+}
+document.getElementById('kv-length').addEventListener('input', updateKV);
+updateKV();
+let printState = null;
+window.addEventListener('beforeprint', () => {
+  if (printState) return;
+  printState = [...document.querySelectorAll('details')].map(el => [el, el.open, el.hidden]);
+  printState.forEach(([el]) => { el.open = true; el.hidden = false; });
+});
+window.addEventListener('afterprint', () => {
+  if (printState) printState.forEach(([el, open, hidden]) => { el.open = open; el.hidden = hidden; });
+  printState = null;
+});
+document.getElementById('print').addEventListener('click', () => window.print());
+const initial = location.hash.slice(1);
+focusChapter(initial.startsWith('chapter-') ? initial : 'chapter-00', false);
+</script>
+</body></html>
